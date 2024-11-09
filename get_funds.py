@@ -2,29 +2,23 @@ import requests
 import mysql.connector
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
+from collections import defaultdict
+import json
+import sys
 import threading
+from queue import Queue
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
+logger = logging.getLogger()
 
 url = "https://portal.amfiindia.com/DownloadNAVHistoryReport_Po.aspx?frmdt=%s&todt=%s"
-lock = threading.Lock()
-
-category_map = {}
-company_map = {}
-fund_map = {}
-
+data_queue = Queue()
 
 def one_month_later_or_latest(date_str):
     initial_date = datetime.strptime(date_str, "%d-%b-%Y")
     one_month_later = initial_date + relativedelta(months=1)
     one_month_later = one_month_later - relativedelta(days=1)
-    today = datetime.today()
-    result_date = one_month_later if one_month_later <= today else today
-    return result_date.strftime("%d-%b-%Y")
-
-
-def one_month_later_or_latest_2(date_str):
-    initial_date = datetime.strptime(date_str, "%d-%b-%Y")
-    one_month_later = initial_date + relativedelta(months=1)
     today = datetime.today()
     result_date = one_month_later if one_month_later <= today else today
     return result_date.strftime("%d-%b-%Y")
@@ -82,7 +76,7 @@ def parse(response):
     return parsed_data
 
 
-def insert_data(data):
+def batch_insert_data(data):
     with open(".passwd.txt", "r") as file:
         passwd = file.read().strip()
 
@@ -91,7 +85,13 @@ def insert_data(data):
     )
     cursor = connection.cursor(buffered=True)
 
+    category_map = {}
+    company_map = {}
+    fund_map = {}
+
+    batch_data = []
     for line in data:
+        print("Processed: ", data.index(line)+1, 'of', len(data), end="\r")
         category, company, name, value, date = (
             line["category"],
             line["company"],
@@ -99,79 +99,125 @@ def insert_data(data):
             line["value"],
             line["date"],
         )
-
+        name = name.replace("'", "")
         date = datetime.strptime(date.strip(), "%d-%b-%Y")
         date = date.strftime("%Y-%m-%d %H:%M:%S")
 
-        with lock:
-            if category not in category_map:
-                cursor.execute(
-                    f"SELECT category_id FROM fund_category WHERE category_name = '{category}'"
-                )
-                if cursor.rowcount <= 0:
-                    cursor.execute(
-                        f"INSERT INTO fund_category (category_name) VALUES ('{category}')"
-                    )
-                    connection.commit()
-                    cursor.execute(
-                        f"SELECT category_id FROM fund_category WHERE category_name = '{category}'"
-                    )
-                category_map[category] = cursor.fetchone()[0]
-            category_id = category_map[category]
+        if name not in fund_map:
+            try:
+                cursor.execute(f"SELECT fund_id FROM fund_name WHERE fund_name = '{name}'")
+            except mysql.connector.Error as err:
+                logger.error(f"Error checking fund {name}: {err}")
+                continue
 
-            if company not in company_map:
-                cursor.execute(
-                    f"SELECT company_id FROM fund_company WHERE company_name = '{company}'"
-                )
-                if cursor.rowcount <= 0:
-                    cursor.execute(
-                        f"INSERT INTO fund_company (company_name) VALUES ('{company}')"
-                    )
-                    connection.commit()
+            if cursor.rowcount <= 0:
+                if company not in company_map:
                     cursor.execute(
                         f"SELECT company_id FROM fund_company WHERE company_name = '{company}'"
                     )
-                company_map[company] = cursor.fetchone()[0]
-            company_id = company_map[company]
+                    if cursor.rowcount <= 0:
+                        cursor.execute(
+                            f"INSERT INTO fund_company (company_name) VALUES ('{company}')"
+                        )
+                        connection.commit()
+                        cursor.execute(
+                            f"SELECT company_id FROM fund_company WHERE company_name = '{company}'"
+                        )
+                    company_id = cursor.fetchone()[0]
+                    company_map[company] = company_id
+                else:
+                    company_id = company_map[company]
 
-            if name not in fund_map:
+                if category not in category_map:
+                    cursor.execute(
+                        f"SELECT category_id FROM fund_category WHERE category_name = '{category}'"
+                    )
+                    if cursor.rowcount <= 0:
+                        cursor.execute(
+                            f"INSERT INTO fund_category (category_name) VALUES ('{category}')"
+                        )
+                        connection.commit()
+                        cursor.execute(
+                            f"SELECT category_id FROM fund_category WHERE category_name = '{category}'"
+                        )
+                    category_id = cursor.fetchone()[0]
+                    category_map[category] = category_id
+                else:
+                    category_id = category_map[category]
+
+                cursor.execute(
+                    f"INSERT INTO fund_name (fund_name, company_id, category_id) VALUES ('{name}', '{company_id}', '{category_id}')"
+                )
+                connection.commit()
                 cursor.execute(
                     f"SELECT fund_id FROM fund_name WHERE fund_name = '{name}'"
                 )
-                if cursor.rowcount <= 0:
-                    cursor.execute(
-                        f"INSERT INTO fund_name (fund_name, company_id, category_id) VALUES ('{name}', '{company_id}', '{category_id}')"
-                    )
-                    connection.commit()
-                    cursor.execute(
-                        f"SELECT fund_id FROM fund_name WHERE fund_name = '{name}'"
-                    )
-                fund_map[name] = cursor.fetchone()[0]
+            fund_id = cursor.fetchone()[0]
+            fund_map[name] = fund_id
+        else:
             fund_id = fund_map[name]
-
-        cursor.execute(
-            f"INSERT INTO fund_value (fund_id, price, date) VALUES ('{fund_id}', '{value}', '{date}')"
+        batch_data.append(
+            (fund_id, value, date)
         )
+
+    try:
+        cursor.executemany(
+            f"INSERT IGNORE INTO fund_value (fund_id, price, date) VALUES (%s, %s, %s)", batch_data
+        )
+        print(batch_data)
         connection.commit()
-
-    cursor.close()
-    connection.close()
-
-
-def process_date(date):
-    print("Currently processing: ", date)
-    response = request_url(url, date)
-    data = parse(response)
-    insert_data(data)
+        logger.info(f"Batch insert completed for {len(batch_data)} records.")
+    except mysql.connector.Error as err:
+        logger.error(f"Error during batch insert: {err}")
+    finally:
+        cursor.close()
+        connection.close()
 
 
-initial_date = "01-Nov-2023"
-dates = [initial_date]
+def process_month(month):
+    try:
+        response = request_url(url, month)
+        parsed_data = parse(response)
+        logger.info(f"Month {month} processed successfully.")
+        data_queue.put(parsed_data)
+    except Exception as e:
+        logger.error(f"Error processing month {month}: {e}")
 
-for _ in range(12):
-    dates.append(one_month_later_or_latest_2(dates[-1]))
 
-print(dates)
+def worker():
+    while True:
+        data = data_queue.get()
+        if data is None:
+            break
+        batch_insert_data(data)
+        data_queue.task_done()
 
-with ThreadPoolExecutor(max_workers=13) as executor:
-    executor.map(process_date, dates)
+
+if __name__ == "__main__":
+    months = sys.argv[1:]
+
+    threads = []
+    for month in months:
+        t = threading.Thread(target=process_month, args=(month,))
+        threads.append(t)
+        t.start()
+
+    for t in threads:
+        t.join()
+
+    num_workers = 4 
+    workers = []
+    for _ in range(num_workers):
+        worker_thread = threading.Thread(target=worker)
+        workers.append(worker_thread)
+        worker_thread.start()
+
+    data_queue.join()
+
+    for _ in range(num_workers):
+        data_queue.put(None)
+
+    for worker_thread in workers:
+        worker_thread.join()
+
+    logger.info("Data processing and insertion complete.")
