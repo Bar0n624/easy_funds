@@ -119,7 +119,7 @@ BEGIN
     DECLARE change_val DOUBLE;
     DECLARE latest_date DATE;
     DECLARE previous_date DATE;
-
+    
     SELECT MAX(date) INTO latest_date
     FROM fund_value
     WHERE fund_id = f_id;
@@ -269,10 +269,10 @@ BEGIN
 
     SET max_value = (SELECT MAX(price) FROM fund_value WHERE fund_id = NEW.fund_id);
     SET min_value = (SELECT MIN(price) FROM fund_value WHERE fund_id = NEW.fund_id);
-
+    
     SET earliest_dt = (SELECT MIN(date) FROM fund_value WHERE fund_id = NEW.fund_id);
     SET latest_dt = (SELECT MAX(date) FROM fund_value WHERE fund_id = NEW.fund_id);
-
+    
 	IF NOT EXISTS (SELECT 1 FROM fund WHERE fund_id = NEW.fund_id) THEN
         INSERT INTO fund (
             fund_id,
@@ -332,7 +332,7 @@ BEGIN
     SET @rank := 0;
     UPDATE fund
     SET fund_rank = NULL; 
-
+    
     UPDATE fund
     SET fund_rank = (@rank := @rank + 1)
     ORDER BY one_year DESC, six_month DESC, three_month DESC, one_month DESC, one_week DESC, one_day DESC;
@@ -342,25 +342,35 @@ CREATE PROCEDURE calculate_fund_category_rank()
 BEGIN
     DECLARE done INT DEFAULT FALSE;
     DECLARE cat_id INT;
-    DECLARE cur CURSOR FOR SELECT DISTINCT category_id FROM fund;
+
+    DECLARE cur CURSOR FOR SELECT DISTINCT category_id FROM fund_name;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
     OPEN cur;
+
     category_loop: LOOP
         FETCH cur INTO cat_id;
+        
         IF done THEN
             LEAVE category_loop;
         END IF;
+        
+        CREATE TEMPORARY TABLE fund_ranks AS
+        SELECT f.fund_id,
+               ROW_NUMBER() OVER (
+                   ORDER BY f.one_year DESC, f.six_month DESC, f.three_month DESC, 
+                            f.one_month DESC, f.one_week DESC, f.one_day DESC
+               ) AS rank
+        FROM fund AS f
+        JOIN fund_name AS fn ON f.fund_id = fn.fund_id
+        WHERE fn.category_id = cat_id;
 
-        SET @category_rank := 0;
-        UPDATE fund
-        SET fund_category_rank = NULL
-        WHERE category_id = cat_id;
+        UPDATE fund AS f
+        JOIN fund_ranks AS fr ON f.fund_id = fr.fund_id
+        SET f.fund_category_rank = fr.rank;
 
-        UPDATE fund
-        SET fund_category_rank = (@category_rank := @category_rank + 1)
-        WHERE category_id = cat_id
-        ORDER BY one_year DESC, six_month DESC, three_month DESC, one_month DESC, one_week DESC, one_day DESC;
+        DROP TEMPORARY TABLE fund_ranks;
+
     END LOOP;
 
     CLOSE cur;
