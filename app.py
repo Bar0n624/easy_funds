@@ -168,6 +168,43 @@ def search():
     return jsonify(rec), ERR_SUCCESS
 
 
+@app.route("/list_companies", methods=["GET"])
+def list_companies():
+    cur = MYSQL_CONN.cursor(dictionary=True)
+    cur.execute("SELECT company_id, company_name FROM fund_company;")
+    rec = cur.fetchall()
+    cur.close()
+    return jsonify(rec), ERR_SUCCESS
+
+
+@app.route("/list_categories", methods=["GET"])
+def list_categories():
+    cur = MYSQL_CONN.cursor(dictionary=True)
+    cur.execute("SELECT category_id, category_name FROM fund_category;")
+    rec = cur.fetchall()
+    cur.close()
+    return jsonify(rec), ERR_SUCCESS
+
+
+@app.route("/category_top", methods=["GET"])
+def category_top():
+    category_id = request.args.get("category_id")
+    if not category_id:
+        return jsonify({"error": "Category ID required"}), ERR_INVALID
+    res = {}
+    cur = MYSQL_CONN.cursor(dictionary=True)
+    try:
+        cur.execute(
+            "SELECT * from fund where category_id = %s ORDER BY fund_category_rank DESC LIMIT 5;"
+        )
+        rec = cur.fetchall()
+        return jsonify(rec), ERR_SUCCESS
+    except Error as e:
+        print(e)
+        cur.close()
+        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
+
+
 """Fund information
 
     * Get fundamentals and other fund info for the given `fund_id`.
