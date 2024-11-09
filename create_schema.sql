@@ -36,7 +36,7 @@ BEGIN
     END IF;
 
     SET change_val = (
-        SELECT (latest.price - previous.price) / previous.price * 100
+        SELECT IFNULL((latest.price - previous.price) / IF(previous.price = 0, NULL, previous.price) * 100, NULL)
         FROM fund_value AS latest
         JOIN fund_value AS previous
         ON previous.date = previous_date AND latest.date = latest_date
@@ -44,9 +44,8 @@ BEGIN
         AND previous.fund_id = f_id
     );
 
-    RETURN IFNULL(change_val, NULL);
+    RETURN change_val;
 END //
-
 
 CREATE FUNCTION one_week_change(f_id INT) RETURNS DOUBLE
 BEGIN
@@ -54,7 +53,6 @@ BEGIN
     DECLARE latest_date DATE;
     DECLARE previous_date DATE;
 
-    -- Get the latest available date for the fund
     SELECT MAX(date) INTO latest_date
     FROM fund_value
     WHERE fund_id = f_id;
@@ -69,15 +67,15 @@ BEGIN
     END IF;
 
     SET change_val = (
-        SELECT (latest.price - previous.price) / previous.price * 100
+        SELECT IFNULL((latest.price - previous.price) / IF(previous.price = 0, NULL, previous.price) * 100, NULL)
         FROM fund_value AS latest
         JOIN fund_value AS previous
         ON previous.date = previous_date AND latest.date = latest_date
-		AND latest.fund_id = f_id
+        AND latest.fund_id = f_id
         AND previous.fund_id = f_id
     );
 
-    RETURN IFNULL(change_val, NULL);
+    RETURN change_val;
 END //
 
 CREATE FUNCTION one_month_change(f_id INT) RETURNS DOUBLE
@@ -100,17 +98,16 @@ BEGIN
     END IF;
 
     SET change_val = (
-        SELECT (latest.price - previous.price) / previous.price * 100
+        SELECT IFNULL((latest.price - previous.price) / IF(previous.price = 0, NULL, previous.price) * 100, NULL)
         FROM fund_value AS latest
         JOIN fund_value AS previous
         ON previous.date = previous_date AND latest.date = latest_date
-		AND latest.fund_id = f_id
+        AND latest.fund_id = f_id
         AND previous.fund_id = f_id
     );
 
-    RETURN IFNULL(change_val, NULL);
+    RETURN change_val;
 END //
-
 
 CREATE FUNCTION three_month_change(f_id INT) RETURNS DOUBLE
 BEGIN
@@ -132,17 +129,16 @@ BEGIN
     END IF;
 
     SET change_val = (
-        SELECT (latest.price - previous.price) / previous.price * 100
+        SELECT IFNULL((latest.price - previous.price) / IF(previous.price = 0, NULL, previous.price) * 100, NULL)
         FROM fund_value AS latest
         JOIN fund_value AS previous
         ON previous.date = previous_date AND latest.date = latest_date
-		AND latest.fund_id = f_id
+        AND latest.fund_id = f_id
         AND previous.fund_id = f_id
     );
 
-    RETURN IFNULL(change_val, NULL);
+    RETURN change_val;
 END //
-
 
 CREATE FUNCTION six_month_change(f_id INT) RETURNS DOUBLE
 BEGIN
@@ -164,15 +160,15 @@ BEGIN
     END IF;
 
     SET change_val = (
-        SELECT (latest.price - previous.price) / previous.price * 100
+        SELECT IFNULL((latest.price - previous.price) / IF(previous.price = 0, NULL, previous.price) * 100, NULL)
         FROM fund_value AS latest
         JOIN fund_value AS previous
         ON previous.date = previous_date AND latest.date = latest_date
-		AND latest.fund_id = f_id
+        AND latest.fund_id = f_id
         AND previous.fund_id = f_id
     );
 
-    RETURN IFNULL(change_val, NULL);
+    RETURN change_val;
 END //
 
 CREATE FUNCTION one_year_change(f_id INT) RETURNS DOUBLE
@@ -195,17 +191,16 @@ BEGIN
     END IF;
 
     SET change_val = (
-        SELECT (latest.price - previous.price) / previous.price * 100
+        SELECT IFNULL((latest.price - previous.price) / IF(previous.price = 0, NULL, previous.price) * 100, NULL)
         FROM fund_value AS latest
         JOIN fund_value AS previous
         ON previous.date = previous_date AND latest.date = latest_date
-		AND latest.fund_id = f_id
+        AND latest.fund_id = f_id
         AND previous.fund_id = f_id
     );
 
-    RETURN IFNULL(change_val, NULL);
+    RETURN change_val;
 END //
-
 
 CREATE FUNCTION lifetime_change(f_id INT) RETURNS DOUBLE
 BEGIN
@@ -241,11 +236,10 @@ BEGIN
         RETURN NULL;
     END IF;
 
-    SET change_val = ((latest_price - earliest_price) / earliest_price) * 100;
+    SET change_val = IFNULL((latest_price - earliest_price) / IF(earliest_price = 0, NULL, earliest_price) * 100, NULL);
 
     RETURN change_val;
 END //
-
 
 CREATE FUNCTION fund_std_dev(f_id INT) RETURNS DOUBLE
 BEGIN
@@ -257,6 +251,7 @@ BEGIN
     );
     RETURN IFNULL(stddev, 0);
 END //
+
 
 CREATE TRIGGER update_fund_after_insert
 AFTER INSERT ON fund_value
