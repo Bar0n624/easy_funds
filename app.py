@@ -152,116 +152,6 @@ def load_home():
     return jsonify(res), ERR_SUCCESS
 
 
-"""List all funds
-"""
-
-
-@app.route("/search", methods=["GET"])
-def search():
-    cur = MYSQL_CONN.cursor(dictionary=True)
-    cur.execute("SELECT fund_id, fund_name FROM fund_name;")
-    rec = cur.fetchall()
-    cur.close()
-    return jsonify(rec), ERR_SUCCESS
-
-
-"""List all companies
-"""
-
-
-@app.route("/list_companies", methods=["GET"])
-def list_companies():
-    cur = MYSQL_CONN.cursor(dictionary=True)
-    cur.execute("SELECT company_id, company_name FROM fund_company;")
-    rec = cur.fetchall()
-    cur.close()
-    return jsonify(rec), ERR_SUCCESS
-
-
-"""List all categories
-"""
-
-
-@app.route("/list_categories", methods=["GET"])
-def list_categories():
-    cur = MYSQL_CONN.cursor(dictionary=True)
-    cur.execute("SELECT category_id, category_name FROM fund_category;")
-    rec = cur.fetchall()
-    cur.close()
-    return jsonify(rec), ERR_SUCCESS
-
-
-@app.route("/category_top", methods=["GET"])
-def category_top():
-    category_id = request.args.get("category_id")
-    if not category_id:
-        return jsonify({"error": "Category ID required"}), ERR_INVALID
-    res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
-    try:
-        cur.execute(
-            "SELECT * from fund where category_id = %s ORDER BY fund_category_rank DESC LIMIT 5;"
-        )
-        rec = cur.fetchall()
-        return jsonify(rec), ERR_SUCCESS
-    except Error as e:
-        print(e)
-        cur.close()
-        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-
-
-"""List all funds of a category
-"""
-
-
-@app.route("/fund_category", methods=["GET"])
-def fund_category():
-    category_id = request.args.get("category_id")
-    if not category_id:
-        return jsonify({"error": "Category ID required"}), ERR_INVALID
-    res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
-    try:
-        cur.execute(
-            "SELECT fund_name.fund_id, fund_name.fund_name, fund_category.category_name from fund_name "
-            "JOIN fund_category ON fund_name.category_id = fund_category.category_id "
-            "WHERE fund_category.category_id = %s;",
-            (category_id,),
-        )
-        rec = cur.fetchall()
-        return jsonify(rec), ERR_SUCCESS
-    except Error as e:
-        print(e)
-        cur.close()
-        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-
-
-"""List all funds of a company
-"""
-
-
-@app.route("/fund_company", methods=["GET"])
-def fund_company():
-    company_id = request.args.get("company_id")
-    if not company_id:
-        return jsonify({"error": "Company ID required"}), ERR_INVALID
-    res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
-    try:
-        cur.execute(
-            "SELECT fund_name.fund_id, fund_name.fund_name, fund_company.company_name from fund_name "
-            "JOIN fund_company ON fund_name.company_id = fund_company.company_id "
-            "WHERE fund_company.company_id = %s;",
-            (company_id,),
-        )
-        rec = cur.fetchall()
-        return jsonify(rec), ERR_SUCCESS
-    except Error as e:
-        print(e)
-        cur.close()
-        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-
-
 """Fund information
 
     * Get fundamentals and other fund info for the given `fund_id`.
@@ -412,7 +302,34 @@ def load_search_fund():
     return jsonify(res), ERR_SUCCESS
 
 
-"""Fund companies
+"""Get all funds
+
+    e.g. localhost:5000/all/fund
+
+    Returns a JSON object.
+"""
+
+
+@app.route("/all/fund", methods=["GET"])
+def load_all_fund():
+    res = {}
+    cur = MYSQL_CONN.cursor(dictionary=True)
+
+    try:
+        cur.execute(
+            "SELECT DISTINCT fund_id AS f_id, fund_name as f_name FROM fund_name;"
+        )
+        rec = cur.fetchall()
+        res["results"] = [[r["f_id"], r["f_name"]] for r in rec]
+    except Error as e:
+        print(e)
+        cur.close()
+        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
+    cur.close()
+    return jsonify(res), ERR_SUCCESS
+
+
+"""Get all fund companies
 
     e.g. localhost:5000/all/company
 
@@ -439,7 +356,7 @@ def load_all_company():
     return jsonify(res), ERR_SUCCESS
 
 
-"""Fund categories
+"""Get all fund categories
 
     e.g. localhost:5000/all/category
 
@@ -466,7 +383,69 @@ def load_all_category():
     return jsonify(res), ERR_SUCCESS
 
 
-"""Search by fund company
+"""Get top fund companies
+
+    e.g. localhost:5000/top/company
+
+    Returns a JSON object.
+"""
+
+
+@app.route("/top/company", methods=["GET"])
+def load_top_company():
+    res = {}
+    cur = MYSQL_CONN.cursor(dictionary=True)
+
+    try:
+        cur.execute(
+            "SELECT DISTINCT fund_company.company_id AS c_id, fund_company.company_name AS c_name, fund.one_year as one_year "
+            "FROM fund_company "
+            "JOIN fund_name ON fund_company.company_id = fund_name.company_id "
+            "JOIN fund ON fund_name.fund_id = fund.fund_id "
+            "ORDER BY fund.one_year DESC limit 5;"
+        )
+        rec = cur.fetchall()
+        res["result"] = [[r["c_id"], r["c_name"], r["one_year"]] for r in rec]
+    except Error as e:
+        print(e)
+        cur.close()
+        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
+    cur.close()
+    return jsonify(rec), ERR_SUCCESS
+
+
+"""Get top fund categories
+
+    e.g. localhost:5000/top/category
+
+    Returns a JSON object.
+"""
+
+
+@app.route("/top/category", methods=["GET"])
+def load_top_category():
+    res = {}
+    cur = MYSQL_CONN.cursor(dictionary=True)
+
+    try:
+        cur.execute(
+            "SELECT DISTINCT fund_category.category_id AS c_id, fund_category.category_name AS c_name, fund.one_year as one_year "
+            "FROM fund_category "
+            "JOIN fund_name ON fund_category.category_id = fund_name.category_id "
+            "JOIN fund ON fund_name.fund_id = fund.fund_id "
+            "ORDER BY fund.one_year DESC limit 5;"
+        )
+        rec = cur.fetchall()
+        res["result"] = [[r["c_id"], r["c_name"], r["one_year"]] for r in rec]
+    except Error as e:
+        print(e)
+        cur.close()
+        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
+    cur.close()
+    return jsonify(rec), ERR_SUCCESS
+
+
+"""Search funds by fund company
 
     * Returns the funds for the corresponding `company_id`.
     * The user is not supposed to search for a company directly,
@@ -518,7 +497,7 @@ def load_search_company():
     return jsonify(res), ERR_SUCCESS
 
 
-"""Search by fund category
+"""Search funds by fund category
 
     * Returns the funds for the corresponding `category_id`.
     * The user is not supposed to search for a category directly,
@@ -593,6 +572,116 @@ def add_watchlist():
         return jsonify({"message": "Error adding to watchlist"}), ERR_INVALID
     cur.close()
     return jsonify({"message": "Added to watchlist"}), ERR_SUCCESS_NEW
+
+
+# """List all funds
+# """
+
+
+# @app.route("/search", methods=["GET"])
+# def search():
+#     cur = MYSQL_CONN.cursor(dictionary=True)
+#     cur.execute("SELECT fund_id, fund_name FROM fund_name;")
+#     rec = cur.fetchall()
+#     cur.close()
+#     return jsonify(rec), ERR_SUCCESS
+
+
+# """List all companies
+# """
+
+
+# @app.route("/list_companies", methods=["GET"])
+# def list_companies():
+#     cur = MYSQL_CONN.cursor(dictionary=True)
+#     cur.execute("SELECT company_id, company_name FROM fund_company;")
+#     rec = cur.fetchall()
+#     cur.close()
+#     return jsonify(rec), ERR_SUCCESS
+
+
+# """List all categories
+# """
+
+
+# @app.route("/list_categories", methods=["GET"])
+# def list_categories():
+#     cur = MYSQL_CONN.cursor(dictionary=True)
+#     cur.execute("SELECT category_id, category_name FROM fund_category;")
+#     rec = cur.fetchall()
+#     cur.close()
+#     return jsonify(rec), ERR_SUCCESS
+
+
+# @app.route("/category_top", methods=["GET"])
+# def category_top():
+#     category_id = request.args.get("category_id")
+#     if not category_id:
+#         return jsonify({"error": "Category ID required"}), ERR_INVALID
+#     res = {}
+#     cur = MYSQL_CONN.cursor(dictionary=True)
+#     try:
+#         cur.execute(
+#             "SELECT * from fund where category_id = %s ORDER BY fund_category_rank DESC LIMIT 5;"
+#         )
+#         rec = cur.fetchall()
+#         return jsonify(rec), ERR_SUCCESS
+#     except Error as e:
+#         print(e)
+#         cur.close()
+#         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
+
+
+# """List all funds of a category
+# """
+
+
+# @app.route("/fund_category", methods=["GET"])
+# def fund_category():
+#     category_id = request.args.get("category_id")
+#     if not category_id:
+#         return jsonify({"error": "Category ID required"}), ERR_INVALID
+#     res = {}
+#     cur = MYSQL_CONN.cursor(dictionary=True)
+#     try:
+#         cur.execute(
+#             "SELECT fund_name.fund_id, fund_name.fund_name, fund_category.category_name from fund_name "
+#             "JOIN fund_category ON fund_name.category_id = fund_category.category_id "
+#             "WHERE fund_category.category_id = %s;",
+#             (category_id,),
+#         )
+#         rec = cur.fetchall()
+#         return jsonify(rec), ERR_SUCCESS
+#     except Error as e:
+#         print(e)
+#         cur.close()
+#         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
+
+
+# """List all funds of a company
+# """
+
+
+# @app.route("/fund_company", methods=["GET"])
+# def fund_company():
+#     company_id = request.args.get("company_id")
+#     if not company_id:
+#         return jsonify({"error": "Company ID required"}), ERR_INVALID
+#     res = {}
+#     cur = MYSQL_CONN.cursor(dictionary=True)
+#     try:
+#         cur.execute(
+#             "SELECT fund_name.fund_id, fund_name.fund_name, fund_company.company_name from fund_name "
+#             "JOIN fund_company ON fund_name.company_id = fund_company.company_id "
+#             "WHERE fund_company.company_id = %s;",
+#             (company_id,),
+#         )
+#         rec = cur.fetchall()
+#         return jsonify(rec), ERR_SUCCESS
+#     except Error as e:
+#         print(e)
+#         cur.close()
+#         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
 
 
 if __name__ == "__main__":
