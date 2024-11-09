@@ -1,17 +1,22 @@
-Use fund;
-Create table fund_company(company_id int primary key auto_increment, company_name varchar(500));
-Create table fund_category(category_id int primary key auto_increment, category_name varchar(500));
-Create table fund_name(fund_id int primary key auto_increment , company_id int, category_id int, fund_name varchar(500),
+USE fund;
+
+-- Login info
+CREATE TABLE users(user_id int primary key auto_increment, user_name varchar(500) NOT NULL UNIQUE, password_hash char(64) NOT NULL, salt char(32) NOT NULL);
+
+-- Fund related schema
+CREATE TABLE fund_company(company_id int primary key auto_increment, company_name varchar(500));
+CREATE TABLE fund_category(category_id int primary key auto_increment, category_name varchar(500));
+CREATE TABLE fund_name(fund_id int primary key auto_increment , company_id int, category_id int, fund_name varchar(500),
 foreign key(category_id) references fund_category(category_id), foreign key(company_id) references fund_company(company_id));
-Create table fund_value(fund_id int, date datetime, price double, foreign key(fund_id) references fund_name(fund_id));
-Create table fund(fund_id int, one_day double, one_week double, one_month double, three_month double, 
+CREATE TABLE fund_value(fund_id int, date datetime, price double, foreign key(fund_id) references fund_name(fund_id));
+CREATE TABLE fund(fund_id int, one_day double, one_week double, one_month double, three_month double,
 six_month double, one_year double, lifetime double, earliest_date datetime, latest_date datetime, high double, low double, standard_deviation double,
 value double, fund_rank int, fund_category_rank int, primary key(fund_id), foreign key(fund_id) references fund_name(fund_id));
-Create table user(user_id int primary key auto_increment, username varchar(20), password char(60));
-Create table portfolio(user_id int, fund_id int, bought_on datetime, bought_for double, sold_on datetime, sold_for double, invested_amount double
+CREATE TABLE user(user_id int primary key auto_increment, username varchar(20), password char(60));
+CREATE TABLE portfolio(user_id int, fund_id int, bought_on datetime, bought_for double, sold_on datetime, sold_for double, invested_amount double
 , return_amount double, foreign key(user_id) references user(user_id), foreign key(fund_id) references fund_name(fund_id),
 primary key(user_id, fund_id, bought_on) );
-Create table watchlist(user_id int, fund_id int, foreign key(user_id) references user(user_id), foreign key(fund_id) references fund_name(fund_id),
+CREATE TABLE watchlist(user_id int, fund_id int, foreign key(user_id) references user(user_id), foreign key(fund_id) references fund_name(fund_id),
 primary key(user_id, fund_id));
 
 
