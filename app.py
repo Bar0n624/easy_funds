@@ -159,6 +159,9 @@ def load_home():
     return jsonify(res), ERR_SUCCESS
 
 
+"""List all funds"""
+
+
 @app.route("/search", methods=["GET"])
 def search():
     cur = MYSQL_CONN.cursor(dictionary=True)
@@ -168,6 +171,9 @@ def search():
     return jsonify(rec), ERR_SUCCESS
 
 
+"""List all companies"""
+
+
 @app.route("/list_companies", methods=["GET"])
 def list_companies():
     cur = MYSQL_CONN.cursor(dictionary=True)
@@ -175,6 +181,9 @@ def list_companies():
     rec = cur.fetchall()
     cur.close()
     return jsonify(rec), ERR_SUCCESS
+
+
+"""List all categories"""
 
 
 @app.route("/list_categories", methods=["GET"])
@@ -196,6 +205,60 @@ def category_top():
     try:
         cur.execute(
             "SELECT * from fund where category_id = %s ORDER BY fund_category_rank DESC LIMIT 5;"
+        )
+        rec = cur.fetchall()
+        return jsonify(rec), ERR_SUCCESS
+    except Error as e:
+        print(e)
+        cur.close()
+        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
+
+
+"""
+    List all funds of a category
+"""
+
+
+@app.route("/fund_category", methods=["GET"])
+def fund_category():
+    category_id = request.args.get("category_id")
+    if not category_id:
+        return jsonify({"error": "Category ID required"}), ERR_INVALID
+    res = {}
+    cur = MYSQL_CONN.cursor(dictionary=True)
+    try:
+        cur.execute(
+            "SELECT fund_name.fund_id, fund_name.fund_name, fund_category.category_name from fund_name "
+            "JOIN fund_category ON fund_name.category_id = fund_category.category_id "
+            "WHERE fund_category.category_id = %s;",
+            (category_id,),
+        )
+        rec = cur.fetchall()
+        return jsonify(rec), ERR_SUCCESS
+    except Error as e:
+        print(e)
+        cur.close()
+        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
+
+
+"""
+    List all funds of a company
+"""
+
+
+@app.route("/fund_company", methods=["GET"])
+def fund_company():
+    company_id = request.args.get("company_id")
+    if not company_id:
+        return jsonify({"error": "Company ID required"}), ERR_INVALID
+    res = {}
+    cur = MYSQL_CONN.cursor(dictionary=True)
+    try:
+        cur.execute(
+            "SELECT fund_name.fund_id, fund_name.fund_name, fund_company.company_name from fund_name "
+            "JOIN fund_company ON fund_name.company_id = fund_company.company_id "
+            "WHERE fund_company.company_id = %s;",
+            (company_id,),
         )
         rec = cur.fetchall()
         return jsonify(rec), ERR_SUCCESS
@@ -309,6 +372,30 @@ def load_fund_graph_data():
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
     cur.close()
     return jsonify(res), ERR_SUCCESS
+
+
+""" Add to watchlist """
+
+
+@app.route("/watchlist", methods=["POST"])
+def add_watchlist():
+    data = request.get_json()
+    if "user_id" not in data or "fund_id" not in data:
+        return jsonify({"error": "User ID and Fund ID required"}), ERR_INVALID
+    user_id = data["user_id"]
+    fund_id = data["fund_id"]
+    cur = MYSQL_CONN.cursor()
+    try:
+        cur.execute(
+            "INSERT INTO watchlist (user_id, fund_id) VALUES (%s, %s)",
+            (user_id, fund_id),
+        )
+        MYSQL_CONN.commit()
+    except Error as e:
+        print(e)
+        return jsonify({"message": "Error adding to watchlist"}), ERR_INVALID
+    cur.close()
+    return jsonify({"message": "Added to watchlist"}), ERR_SUCCESS_NEW
 
 
 if __name__ == "__main__":
