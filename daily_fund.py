@@ -131,6 +131,8 @@ def insert_data(data):
         )
         connection.commit()
 
+    cursor.execute("call calculate_fund_rank;")
+    cursor.execute("call calculate_fund_category_rank;")
     cursor.close()
     connection.close()
 
