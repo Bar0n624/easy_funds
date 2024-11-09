@@ -11,6 +11,7 @@ url = "https://portal.amfiindia.com/DownloadNAVHistoryReport_Po.aspx?frmdt=%s&to
 def one_month_later_or_latest(date_str):
     initial_date = datetime.strptime(date_str, "%d-%b-%Y")
     one_month_later = initial_date + relativedelta(months=1)
+    one_month_later = one_month_later - relativedelta(days=1)
     today = datetime.today()
     result_date = one_month_later if one_month_later <= today else today
     return result_date.strftime("%d-%b-%Y")
@@ -79,6 +80,7 @@ def insert_data(data):
     cursor = connection.cursor(buffered=True)
 
     for line in data:
+        print("Progress: ", data.index(line) + 1, "/", len(data), end="\r")
         category, company, name, value, date = (
             line["category"],
             line["company"],
@@ -148,7 +150,9 @@ def insert_data(data):
 
     cursor.close()
 
-date = "01-Jul-2023"
-for i in range(17):
+
+date = "01-Nov-2023"
+for i in range(13):
+    print("currently processing: ", date)
     insert_data(parse(request_url(url, date)))
-    date=one_month_later_or_latest(date)
+    date = one_month_later_or_latest(date)
