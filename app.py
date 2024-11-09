@@ -48,7 +48,7 @@ def add_user():
     cur = MYSQL_CONN.cursor()
     try:
         cur.execute(
-            "INSERT INTO users (user_name, password_hash, salt) VALUES (%s, %s, %s)",
+            "INSERT INTO user (user_name, password_hash, salt) VALUES (%s, %s, %s)",
             (user_name, password_hash, salt),
         )
         MYSQL_CONN.commit()
@@ -76,7 +76,7 @@ def verify_user():
 
     cur = MYSQL_CONN.cursor(dictionary=True)
     cur.execute(
-        "SELECT password_hash, salt FROM users where user_name = %s", (user_name,)
+        "SELECT password_hash, salt FROM user where user_name = %s", (user_name,)
     )
     rec = cur.fetchone()
     cur.close()
