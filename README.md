@@ -1,2 +1,2 @@
 # easy_funds
-easy mutual fund tracking system
+Simple Mutual Fund tracking system.
