@@ -15,6 +15,7 @@ logger = logging.getLogger()
 url = "https://portal.amfiindia.com/DownloadNAVHistoryReport_Po.aspx?frmdt=%s&todt=%s"
 data_queue = Queue()
 
+
 def one_month_later_or_latest(date_str):
     initial_date = datetime.strptime(date_str, "%d-%b-%Y")
     one_month_later = initial_date + relativedelta(months=1)
@@ -91,7 +92,7 @@ def batch_insert_data(data):
 
     batch_data = []
     for line in data:
-        print("Processed: ", data.index(line)+1, 'of', len(data), end="\r")
+        print("Processed: ", data.index(line) + 1, "of", len(data), end="\r")
         category, company, name, value, date = (
             line["category"],
             line["company"],
@@ -105,7 +106,9 @@ def batch_insert_data(data):
 
         if name not in fund_map:
             try:
-                cursor.execute(f"SELECT fund_id FROM fund_name WHERE fund_name = '{name}'")
+                cursor.execute(
+                    f"SELECT fund_id FROM fund_name WHERE fund_name = '{name}'"
+                )
             except mysql.connector.Error as err:
                 logger.error(f"Error checking fund {name}: {err}")
                 continue
@@ -156,13 +159,12 @@ def batch_insert_data(data):
             fund_map[name] = fund_id
         else:
             fund_id = fund_map[name]
-        batch_data.append(
-            (fund_id, value, date)
-        )
+        batch_data.append((fund_id, value, date))
 
     try:
         cursor.executemany(
-            f"INSERT IGNORE INTO fund_value (fund_id, price, date) VALUES (%s, %s, %s)", batch_data
+            f"INSERT IGNORE INTO fund_value (fund_id, price, date) VALUES (%s, %s, %s)",
+            batch_data,
         )
         print(batch_data)
         connection.commit()
@@ -174,50 +176,56 @@ def batch_insert_data(data):
         connection.close()
 
 
-def process_month(month):
-    try:
-        response = request_url(url, month)
-        parsed_data = parse(response)
-        logger.info(f"Month {month} processed successfully.")
-        data_queue.put(parsed_data)
-    except Exception as e:
-        logger.error(f"Error processing month {month}: {e}")
+# def process_month(month):
+#     try:
+#         response = request_url(url, month)
+#         parsed_data = parse(response)
+#         logger.info(f"Month {month} processed successfully.")
+#         data_queue.put(parsed_data)
+#     except Exception as e:
+#         logger.error(f"Error processing month {month}: {e}")
 
 
-def worker():
-    while True:
-        data = data_queue.get()
-        if data is None:
-            break
-        batch_insert_data(data)
-        data_queue.task_done()
+# def worker():
+#     while True:
+#         data = data_queue.get()
+#         if data is None:
+#             break
+#         batch_insert_data(data)
+#         data_queue.task_done()
 
+
+# if __name__ == "__main__":
+#     months = sys.argv[1:]
+
+#     threads = []
+#     for month in months:
+#         t = threading.Thread(target=process_month, args=(month,))
+#         threads.append(t)
+#         t.start()
+
+#     for t in threads:
+#         t.join()
+
+#     num_workers = 4
+#     workers = []
+#     for _ in range(num_workers):
+#         worker_thread = threading.Thread(target=worker)
+#         workers.append(worker_thread)
+#         worker_thread.start()
+
+#     data_queue.join()
+
+#     for _ in range(num_workers):
+#         data_queue.put(None)
+
+#     for worker_thread in workers:
+#         worker_thread.join()
+
+#     logger.info("Data processing and insertion complete.")
 
 if __name__ == "__main__":
     months = sys.argv[1:]
-
-    threads = []
     for month in months:
-        t = threading.Thread(target=process_month, args=(month,))
-        threads.append(t)
-        t.start()
+        batch_insert_data(parse(request_url(url, month)))
 
-    for t in threads:
-        t.join()
-
-    num_workers = 4 
-    workers = []
-    for _ in range(num_workers):
-        worker_thread = threading.Thread(target=worker)
-        workers.append(worker_thread)
-        worker_thread.start()
-
-    data_queue.join()
-
-    for _ in range(num_workers):
-        data_queue.put(None)
-
-    for worker_thread in workers:
-        worker_thread.join()
-
-    logger.info("Data processing and insertion complete.")
