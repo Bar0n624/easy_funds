@@ -142,7 +142,7 @@ def load_home():
         )
         rec = cur.fetchall()
         res["watchlist"] = [
-            [r["fid"], r["fname"], r["lifename"], r["one_day"]] for r in rec
+            [r["fid"], r["fname"], r["lifetime"], r["one_day"]] for r in rec
         ]
     except Error as e:
         print(e)
@@ -549,11 +549,11 @@ def load_search_category():
     return jsonify(res), ERR_SUCCESS
 
 
-"""Add to watchlist
+"""Add one item to watchlist
 """
 
 
-@app.route("/watchlist", methods=["POST"])
+@app.route("/watchlist/addone", methods=["POST"])
 def add_watchlist():
     data = request.get_json()
     if "user_id" not in data or "fund_id" not in data:
@@ -572,6 +572,33 @@ def add_watchlist():
         return jsonify({"message": "Error adding to watchlist"}), ERR_INVALID
     cur.close()
     return jsonify({"message": "Added to watchlist"}), ERR_SUCCESS_NEW
+
+
+"""Add many items to watchlist
+"""
+
+
+@app.route("/watchlist/addmany", methods=["POST"])
+def add_many_watchlist():
+    data = request.get_json()
+    if "items" not in data or not isinstance(data["items"], list):
+        return jsonify({"error": "Items list is required"}), ERR_INVALID
+
+    items = data["items"]  # This should be a list of dictionaries, each containing 'user_id' and 'fund_id'
+
+    if not all("user_id" in item and "fund_id" in item for item in items):
+        return jsonify({"error": "Each item must contain User ID and Fund ID"}), ERR_INVALID
+
+    cur = MYSQL_CONN.cursor()
+    try:
+        query = "INSERT INTO watchlist (user_id, fund_id) VALUES (%s, %s)"
+        cur.executemany(query, [(item["user_id"], item["fund_id"]) for item in items])
+        MYSQL_CONN.commit()
+    except Error as e:
+        print(e)
+        return jsonify({"message": "Error adding items to watchlist"}), ERR_INVALID
+    cur.close()
+    return jsonify({"message": "Added multiple items to watchlist"}), ERR_SUCCESS_NEW
 
 
 # """List all funds
