@@ -33,8 +33,6 @@ def mysql_connect():
 
 """Register a user
 """
-
-
 @app.route("/register", methods=["POST"])
 def add_user():
     data = request.get_json()
@@ -67,8 +65,6 @@ def add_user():
 
 """User login
 """
-
-
 @app.route("/login", methods=["POST"])
 def verify_user():
     data = request.get_json()
@@ -101,13 +97,13 @@ def verify_user():
     * Get the top 10 funds ordered by 1y, 6m, 3m and 1m each.
     * Get the funds being tracked by the user.
 
+    e.g. localhost:5000/home?u_id=1
+
     Returns a JSON object.
 """
-
-
 @app.route("/home", methods=["GET"])
 def load_home():
-    user_id = request.args.get("user_id")
+    user_id = request.args.get('u_id')
     if not user_id:
         return jsonify({"error": "User ID required"}), ERR_INVALID
 
@@ -116,41 +112,35 @@ def load_home():
 
     def Query(cur, val, lim=5):
         cur.execute(
-            f"SELECT fund_company.company_name, fund_name.fund_name, ROUND(fund.{val}, 2) FROM fund_name "
+            f"SELECT fund_company.company_name AS cname, fund_name.fund_name AS fname, ROUND(fund.{val}, 2) AS price FROM fund_name "
             "JOIN fund_company ON fund_name.company_id = fund_company.company_id "
             "JOIN fund ON fund_name.fund_id = fund.fund_id "
             f"ORDER BY fund.{val} DESC LIMIT {lim};"
         )
+        rec = cur.fetchmany(size=lim)
+        return [[r['cname'], r['fname'], r['price']] for r in rec]
 
     try:
         # Top 5 funds for one year
-        Query(cur, "one_year")
-        rec = cur.fetchmany(size=5)
-        res["one_year"] = rec
+        res["one_year"] = Query(cur, "one_year")
 
         # Top 5 funds for six months
-        Query(cur, "six_month")
-        rec = cur.fetchmany(size=5)
-        res["six_month"] = rec
+        res["six_month"] = Query(cur, "six_month")
 
         # Top 5 funds for three months
-        Query(cur, "three_month")
-        rec = cur.fetchmany(size=5)
-        res["three_month"] = rec
+        res["three_month"] = Query(cur, "three_month")
 
         # Top 5 funds for one month
-        Query(cur, "one_month")
-        rec = cur.fetchmany(size=5)
-        res["one_month"] = rec
+        res["one_month"] = Query(cur, "one_month")
 
         # User tracked funds
         cur.execute(
-            "SELECT fund_name.fund_name, fund.lifetime, fund.one_day FROM fund_name "
+            "SELECT fund_name.fund_id as fid, fund_name.fund_name as fname, fund.lifetime as lifetime, fund.one_day as one_day FROM fund_name "
             f"JOIN watchlist ON (fund_name.fund_id = watchlist.fund_id AND watchlist.user_id = {user_id}) "
             "JOIN fund ON fund_name.fund_id = fund.fund_id;"
         )
         rec = cur.fetchall()
-        res["watchlist"] = rec
+        res['watchlist'] = [[r['fid'], r['fname'], r['lifename'], r['one_day']] for r in rec]
     except Error as e:
         print(e)
         cur.close()
@@ -159,9 +149,8 @@ def load_home():
     return jsonify(res), ERR_SUCCESS
 
 
-"""List all funds"""
-
-
+"""List all funds
+"""
 @app.route("/search", methods=["GET"])
 def search():
     cur = MYSQL_CONN.cursor(dictionary=True)
@@ -171,9 +160,8 @@ def search():
     return jsonify(rec), ERR_SUCCESS
 
 
-"""List all companies"""
-
-
+"""List all companies
+"""
 @app.route("/list_companies", methods=["GET"])
 def list_companies():
     cur = MYSQL_CONN.cursor(dictionary=True)
@@ -183,9 +171,8 @@ def list_companies():
     return jsonify(rec), ERR_SUCCESS
 
 
-"""List all categories"""
-
-
+"""List all categories
+"""
 @app.route("/list_categories", methods=["GET"])
 def list_categories():
     cur = MYSQL_CONN.cursor(dictionary=True)
@@ -214,11 +201,8 @@ def category_top():
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
 
 
+"""List all funds of a category
 """
-    List all funds of a category
-"""
-
-
 @app.route("/fund_category", methods=["GET"])
 def fund_category():
     category_id = request.args.get("category_id")
@@ -241,11 +225,8 @@ def fund_category():
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
 
 
+"""List all funds of a company
 """
-    List all funds of a company
-"""
-
-
 @app.route("/fund_company", methods=["GET"])
 def fund_company():
     company_id = request.args.get("company_id")
@@ -274,13 +255,13 @@ def fund_company():
     * Get a maximum of 5 other funds in the same category.
     * Get a maximum of 5 other funds by the same company.
 
+    e.g. localhost:5000/fund?f_id=1
+
     Returns a JSON object.
 """
-
-
 @app.route("/fund", methods=["GET"])
 def load_fund():
-    fund_id = request.args.get("fund_id")
+    fund_id = request.args.get('f_id')
     if not fund_id:
         return jsonify({"error": "Fund ID required"}), ERR_INVALID
 
@@ -345,13 +326,13 @@ def load_fund():
     * Returns the fund value for the lifetime of the fund,
       for the fund corresponding to the given `fund_id`.
 
+    e.g. localhost:5000/fund/graph_data?f_id=1
+
     Returns a JSON object.
 """
-
-
 @app.route("/fund/graph_data", methods=["GET"])
 def load_fund_graph_data():
-    fund_id = request.args.get("fund_id")
+    fund_id = request.args.get('f_id')
     if not fund_id:
         return jsonify({"error": "Fund ID required"}), ERR_INVALID
 
@@ -373,10 +354,185 @@ def load_fund_graph_data():
     cur.close()
     return jsonify(res), ERR_SUCCESS
 
+"""Search by fund name
 
-""" Add to watchlist """
+    * Search results contain partial matches.
 
+    e.g. localhost:5000/search/fund?q=example%20fund
 
+    Returns a JSON object.
+"""
+@app.route('/search/fund', methods=['GET'])
+def load_search_fund():
+    search = request.args.get('q')
+    if not search:
+        return jsonify({"error": "Empty search query"}), ERR_INVALID
+
+    res = {}
+    cur = MYSQL_CONN.cursor(dictionary=True)
+
+    search_fmt = f"%{'%'.join(search.split())}%"  # "example fund" -> "%Example%Fund%"
+
+    try:
+        cur.execute(
+            "SELECT DISTINCT fund_name.fund_id, fund_name.fund_name "
+            "FROM fund_name "
+            "JOIN fund ON fund_name.fund_id = fund.fund_id "
+            "WHERE fund_name.fund_name LIKE %s "
+            "ORDER BY fund.one_year DESC;",
+            (search_fmt,)
+        )
+        rec = cur.fetchall()
+        res['results'] = [[r['fund_id'], r['fund_name']] for r in rec]
+    except Error as e:
+        print(e)
+        cur.close()
+        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
+    cur.close()
+    return jsonify(res), ERR_SUCCESS
+
+"""Fund companies
+
+    e.g. localhost:5000/all/company
+
+    Returns a JSON object.
+"""
+@app.route('/all/company', methods=['GET'])
+def load_all_company():
+    res = {}
+    cur = MYSQL_CONN.cursor(dictionary=True)
+
+    try:
+        cur.execute(
+            "SELECT DISTINCT company_id AS c_id, company_name as c_name FROM fund_company;"
+        )
+        rec = cur.fetchall()
+        res['results'] = [[r['c_id'], r['c_name']] for r in rec]
+    except Error as e:
+        print(e)
+        cur.close()
+        return jsonify({"error" : "Could not process query"}), ERR_INTERNAL_ALL
+    cur.close()
+    return jsonify(res), ERR_SUCCESS
+
+"""Fund categories
+
+    e.g. localhost:5000/all/category
+
+    Returns a JSON object.
+"""
+@app.route('/all/category', methods=['GET'])
+def load_all_category():
+    res = {}
+    cur = MYSQL_CONN.cursor(dictionary=True)
+
+    try:
+        cur.execute(
+            "SELECT DISTINCT category_id AS c_id, category_name as c_name FROM fund_category;"
+        )
+        rec = cur.fetchall()
+        res['results'] = [[r['c_id'], r['c_name']] for r in rec]
+    except Error as e:
+        print(e)
+        cur.close()
+        return jsonify({"error" : "Could not process query"}), ERR_INTERNAL_ALL
+    cur.close()
+    return jsonify(res), ERR_SUCCESS
+
+"""Search by fund company
+
+    * Returns the funds for the corresponding `company_id`.
+    * The user is not supposed to search for a company directly,
+      but instead select a company from a given list.
+    * Use `load_all_company` to get a list of all companies.
+
+    e.g. localhost:5000/search/company?c_id=1
+
+    Returns a JSON object.
+"""
+@app.route('/search/company', methods=['GET'])
+def load_search_company():
+    c_id = request.args.get('c_id')
+    if not c_id:
+        return jsonify({"error": "Empty search query"}), ERR_INVALID
+
+    res = {}
+    cur = MYSQL_CONN.cursor(dictionary=True)
+
+    try:
+        cur.execute("SELECT UNIQUE company_name from fund_company WHERE company_id = %s;", (c_id, ))
+        rec = cur.fetchone()
+        if not rec:
+            return jsonify({}), ERR_SUCCESS
+
+        res['company_name'] = rec['company_name']
+
+        cur.execute(
+            "SELECT DISTINCT fund_name.fund_id AS fid, fund_name.fund_name AS fname, ROUND(fund.one_year, 2) as one_year "
+            "FROM fund_name "
+            "JOIN fund_company ON fund_name.company_id = fund_company.company_id "
+            "JOIN fund ON fund_name.fund_id = fund.fund_id "
+            "WHERE fund_company.company_id = %s "
+            "ORDER BY fund.one_year DESC;",
+            (c_id, )
+        )
+        rec = cur.fetchall()
+        res['results'] = [[r['fid'], r['fname'], r['one_year']] for r in rec]
+    except Error as e:
+        print(e)
+        cur.close()
+        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
+    cur.close()
+    return jsonify(res), ERR_SUCCESS
+
+"""Search by fund category
+
+    * Returns the funds for the corresponding `category_id`.
+    * The user is not supposed to search for a category directly,
+      but instead select a category from a given list.
+    * Use `load_all_category` to get a list of all categories.
+
+    e.g. localhost:5000/search/category?c_id=1
+
+    Returns a JSON object.
+"""
+@app.route('/search/category', methods=['GET'])
+def load_search_category():
+    c_id = request.args.get('c_id')
+    if not c_id:
+        return jsonify({"error": "Empty search query"}), ERR_INVALID
+
+    res = {}
+    cur = MYSQL_CONN.cursor(dictionary=True)
+
+    try:
+        cur.execute("SELECT UNIQUE category_name from fund_category WHERE category_id = %s;", (c_id, ))
+        rec = cur.fetchone()
+        if not rec:
+            return jsonify({}), ERR_SUCCESS
+
+        res['category_name'] = rec['category_name']
+
+        cur.execute(
+            "SELECT DISTINCT fund_name.fund_id AS fid, fund_name.fund_name AS fname, ROUND(fund.one_year, 2) as one_year "
+            "FROM fund_name "
+            "JOIN fund_category ON fund_name.category_id = fund_category.category_id "
+            "JOIN fund ON fund_name.fund_id = fund.fund_id "
+            "WHERE fund_category.category_id = %s "
+            "ORDER BY fund.one_year DESC;",
+            (c_id, )
+        )
+        rec = cur.fetchall()
+        res['results'] = [[r['fid'], r['fname'], r['one_year']] for r in rec]
+    except Error as e:
+        print(e)
+        cur.close()
+        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
+    cur.close()
+    return jsonify(res), ERR_SUCCESS
+
+"""Add to watchlist
+"""
 @app.route("/watchlist", methods=["POST"])
 def add_watchlist():
     data = request.get_json()
