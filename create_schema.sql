@@ -119,7 +119,7 @@ BEGIN
     DECLARE change_val DOUBLE;
     DECLARE latest_date DATE;
     DECLARE previous_date DATE;
-    
+
     SELECT MAX(date) INTO latest_date
     FROM fund_value
     WHERE fund_id = f_id;
@@ -269,10 +269,10 @@ BEGIN
 
     SET max_value = (SELECT MAX(price) FROM fund_value WHERE fund_id = NEW.fund_id);
     SET min_value = (SELECT MIN(price) FROM fund_value WHERE fund_id = NEW.fund_id);
-    
+
     SET earliest_dt = (SELECT MIN(date) FROM fund_value WHERE fund_id = NEW.fund_id);
     SET latest_dt = (SELECT MAX(date) FROM fund_value WHERE fund_id = NEW.fund_id);
-    
+
 	IF NOT EXISTS (SELECT 1 FROM fund WHERE fund_id = NEW.fund_id) THEN
         INSERT INTO fund (
             fund_id,
@@ -332,7 +332,7 @@ BEGIN
     SET @rank := 0;
     UPDATE fund
     SET fund_rank = NULL; 
-    
+
     UPDATE fund
     SET fund_rank = (@rank := @rank + 1)
     ORDER BY one_year DESC, six_month DESC, three_month DESC, one_month DESC, one_week DESC, one_day DESC;
@@ -344,19 +344,19 @@ BEGIN
     DECLARE cat_id INT;
     DECLARE cur CURSOR FOR SELECT DISTINCT category_id FROM fund;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-    
+
     OPEN cur;
     category_loop: LOOP
         FETCH cur INTO cat_id;
         IF done THEN
             LEAVE category_loop;
         END IF;
-        
+
         SET @category_rank := 0;
         UPDATE fund
         SET fund_category_rank = NULL
         WHERE category_id = cat_id;
-        
+
         UPDATE fund
         SET fund_category_rank = (@category_rank := @category_rank + 1)
         WHERE category_id = cat_id
