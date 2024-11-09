@@ -17,123 +17,236 @@ primary key(user_id, fund_id));
 
 DELIMITER //
 
--- Calculate one-day change percentage
 CREATE FUNCTION one_day_change(f_id INT) RETURNS DOUBLE
 BEGIN
     DECLARE change_val DOUBLE;
+    DECLARE latest_date DATE;
+    DECLARE previous_date DATE;
+
+    SELECT MAX(date) INTO latest_date
+    FROM fund_value
+    WHERE fund_id = f_id;
+
+    SELECT MAX(date) INTO previous_date
+    FROM fund_value
+    WHERE fund_id = f_id AND date < latest_date;
+
+    IF previous_date IS NULL THEN
+        RETURN NULL;
+    END IF;
+
     SET change_val = (
         SELECT (latest.price - previous.price) / previous.price * 100
         FROM fund_value AS latest
         JOIN fund_value AS previous
-        ON previous.date = DATE_SUB(latest.date, INTERVAL 1 DAY)
-        WHERE latest.fund_id = f_id
-        ORDER BY latest.date DESC
-        LIMIT 1
+        ON previous.date = previous_date AND latest.date = latest_date
+        AND latest.fund_id = f_id
+        AND previous.fund_id = f_id
     );
-    RETURN IFNULL(change_val, 0);
+
+    RETURN IFNULL(change_val, NULL);
 END //
 
--- Calculate one-week change percentage
+
 CREATE FUNCTION one_week_change(f_id INT) RETURNS DOUBLE
 BEGIN
     DECLARE change_val DOUBLE;
+    DECLARE latest_date DATE;
+    DECLARE previous_date DATE;
+
+    -- Get the latest available date for the fund
+    SELECT MAX(date) INTO latest_date
+    FROM fund_value
+    WHERE fund_id = f_id;
+
+    SELECT MIN(date) INTO previous_date
+    FROM fund_value
+    WHERE fund_id = f_id AND date < latest_date AND date >= DATE_SUB(latest_date, INTERVAL 7 DAY)
+    LIMIT 1;
+
+    IF previous_date IS NULL THEN
+        RETURN NULL;
+    END IF;
+
     SET change_val = (
         SELECT (latest.price - previous.price) / previous.price * 100
         FROM fund_value AS latest
         JOIN fund_value AS previous
-        ON previous.date = DATE_SUB(latest.date, INTERVAL 7 DAY)
-        WHERE latest.fund_id = f_id
-        ORDER BY latest.date DESC
-        LIMIT 1
+        ON previous.date = previous_date AND latest.date = latest_date
+		AND latest.fund_id = f_id
+        AND previous.fund_id = f_id
     );
-    RETURN IFNULL(change_val, 0);
+
+    RETURN IFNULL(change_val, NULL);
 END //
 
--- Calculate one-month change percentage
 CREATE FUNCTION one_month_change(f_id INT) RETURNS DOUBLE
 BEGIN
     DECLARE change_val DOUBLE;
+    DECLARE latest_date DATE;
+    DECLARE previous_date DATE;
+
+    SELECT MAX(date) INTO latest_date
+    FROM fund_value
+    WHERE fund_id = f_id;
+
+    SELECT MIN(date) INTO previous_date
+    FROM fund_value
+    WHERE fund_id = f_id AND date < latest_date AND date >= DATE_SUB(latest_date, INTERVAL 1 MONTH)
+    LIMIT 1;
+
+    IF previous_date IS NULL THEN
+        RETURN NULL;
+    END IF;
+
     SET change_val = (
         SELECT (latest.price - previous.price) / previous.price * 100
         FROM fund_value AS latest
         JOIN fund_value AS previous
-        ON previous.date = DATE_SUB(latest.date, INTERVAL 1 MONTH)
-        WHERE latest.fund_id = f_id
-        ORDER BY latest.date DESC
-        LIMIT 1
+        ON previous.date = previous_date AND latest.date = latest_date
+		AND latest.fund_id = f_id
+        AND previous.fund_id = f_id
     );
-    RETURN IFNULL(change_val, 0);
+
+    RETURN IFNULL(change_val, NULL);
 END //
 
--- Calculate three-month change percentage
+
 CREATE FUNCTION three_month_change(f_id INT) RETURNS DOUBLE
 BEGIN
     DECLARE change_val DOUBLE;
+    DECLARE latest_date DATE;
+    DECLARE previous_date DATE;
+    
+    SELECT MAX(date) INTO latest_date
+    FROM fund_value
+    WHERE fund_id = f_id;
+
+    SELECT MIN(date) INTO previous_date
+    FROM fund_value
+    WHERE fund_id = f_id AND date < latest_date AND date >= DATE_SUB(latest_date, INTERVAL 3 MONTH)
+    LIMIT 1;
+
+    IF previous_date IS NULL THEN
+        RETURN NULL;
+    END IF;
+
     SET change_val = (
         SELECT (latest.price - previous.price) / previous.price * 100
         FROM fund_value AS latest
         JOIN fund_value AS previous
-        ON previous.date = DATE_SUB(latest.date, INTERVAL 3 MONTH)
-        WHERE latest.fund_id = f_id
-        ORDER BY latest.date DESC
-        LIMIT 1
+        ON previous.date = previous_date AND latest.date = latest_date
+		AND latest.fund_id = f_id
+        AND previous.fund_id = f_id
     );
-    RETURN IFNULL(change_val, 0);
+
+    RETURN IFNULL(change_val, NULL);
 END //
 
--- Calculate six-month change percentage
+
 CREATE FUNCTION six_month_change(f_id INT) RETURNS DOUBLE
 BEGIN
     DECLARE change_val DOUBLE;
+    DECLARE latest_date DATE;
+    DECLARE previous_date DATE;
+
+    SELECT MAX(date) INTO latest_date
+    FROM fund_value
+    WHERE fund_id = f_id;
+
+    SELECT MIN(date) INTO previous_date
+    FROM fund_value
+    WHERE fund_id = f_id AND date < latest_date AND date >= DATE_SUB(latest_date, INTERVAL 6 MONTH)
+    LIMIT 1;
+
+    IF previous_date IS NULL THEN
+        RETURN NULL;
+    END IF;
+
     SET change_val = (
         SELECT (latest.price - previous.price) / previous.price * 100
         FROM fund_value AS latest
         JOIN fund_value AS previous
-        ON previous.date = DATE_SUB(latest.date, INTERVAL 6 MONTH)
-        WHERE latest.fund_id = f_id
-        ORDER BY latest.date DESC
-        LIMIT 1
+        ON previous.date = previous_date AND latest.date = latest_date
+		AND latest.fund_id = f_id
+        AND previous.fund_id = f_id
     );
-    RETURN IFNULL(change_val, 0);
+
+    RETURN IFNULL(change_val, NULL);
 END //
 
--- Calculate one-year change percentage
 CREATE FUNCTION one_year_change(f_id INT) RETURNS DOUBLE
 BEGIN
     DECLARE change_val DOUBLE;
+    DECLARE latest_date DATE;
+    DECLARE previous_date DATE;
+
+    SELECT MAX(date) INTO latest_date
+    FROM fund_value
+    WHERE fund_id = f_id;
+
+    SELECT MIN(date) INTO previous_date
+    FROM fund_value
+    WHERE fund_id = f_id AND date < latest_date AND date >= DATE_SUB(latest_date, INTERVAL 1 YEAR)
+    LIMIT 1;
+
+    IF previous_date IS NULL THEN
+        RETURN NULL;
+    END IF;
+
     SET change_val = (
         SELECT (latest.price - previous.price) / previous.price * 100
         FROM fund_value AS latest
         JOIN fund_value AS previous
-        ON previous.date = DATE_SUB(latest.date, INTERVAL 1 YEAR)
-        WHERE latest.fund_id = f_id
-        ORDER BY latest.date DESC
-        LIMIT 1
+        ON previous.date = previous_date AND latest.date = latest_date
+		AND latest.fund_id = f_id
+        AND previous.fund_id = f_id
     );
-    RETURN IFNULL(change_val, 0);
+
+    RETURN IFNULL(change_val, NULL);
 END //
 
--- Calculate lifetime change percentage (based on earliest price entry)
+
 CREATE FUNCTION lifetime_change(f_id INT) RETURNS DOUBLE
 BEGIN
     DECLARE change_val DOUBLE;
-    SET change_val = (
-        SELECT (latest.price - earliest.price) / earliest.price * 100
-        FROM fund_value AS latest
-        JOIN fund_value AS earliest
-        ON earliest.date = (
-            SELECT MIN(date)
-            FROM fund_value
-            WHERE fund_id = f_id
-        )
-        WHERE latest.fund_id = f_id
-        ORDER BY latest.date DESC
-        LIMIT 1
-    );
-    RETURN IFNULL(change_val, 0);
+    DECLARE latest_date DATE;
+    DECLARE earliest_date DATE;
+    DECLARE latest_price DOUBLE;
+    DECLARE earliest_price DOUBLE;
+
+    SELECT MAX(date) INTO latest_date
+    FROM fund_value
+    WHERE fund_id = f_id;
+
+    SELECT MIN(date) INTO earliest_date
+    FROM fund_value
+    WHERE fund_id = f_id;
+
+    IF latest_date IS NULL OR earliest_date IS NULL THEN
+        RETURN NULL;
+    END IF;
+
+    SELECT price INTO latest_price
+    FROM fund_value
+    WHERE fund_id = f_id AND date = latest_date
+    LIMIT 1;
+
+    SELECT price INTO earliest_price
+    FROM fund_value
+    WHERE fund_id = f_id AND date = earliest_date
+    LIMIT 1;
+
+    IF latest_price IS NULL OR earliest_price IS NULL THEN
+        RETURN NULL;
+    END IF;
+
+    SET change_val = ((latest_price - earliest_price) / earliest_price) * 100;
+
+    RETURN change_val;
 END //
 
--- Calculate standard deviation over lifetime
+
 CREATE FUNCTION fund_std_dev(f_id INT) RETURNS DOUBLE
 BEGIN
     DECLARE stddev DOUBLE;
@@ -154,11 +267,9 @@ BEGIN
     DECLARE earliest_dt DATETIME;
     DECLARE latest_dt DATETIME;
 
-    -- Calculate high (max) and low (min) prices
     SET max_value = (SELECT MAX(price) FROM fund_value WHERE fund_id = NEW.fund_id);
     SET min_value = (SELECT MIN(price) FROM fund_value WHERE fund_id = NEW.fund_id);
     
-    -- Get earliest and latest dates for the fund
     SET earliest_dt = (SELECT MIN(date) FROM fund_value WHERE fund_id = NEW.fund_id);
     SET latest_dt = (SELECT MAX(date) FROM fund_value WHERE fund_id = NEW.fund_id);
     
@@ -181,18 +292,18 @@ BEGIN
         )
         VALUES (
             NEW.fund_id,
-            one_day_change(NEW.fund_id),  -- Use function for one_day change
-            one_week_change(NEW.fund_id),  -- Use function for one_week change
-            one_month_change(NEW.fund_id),  -- Use function for one_month change
-            three_month_change(NEW.fund_id),  -- Use function for three_month change
-            six_month_change(NEW.fund_id),  -- Use function for six_month change
-            one_year_change(NEW.fund_id),  -- Use function for one_year change
-            lifetime_change(NEW.fund_id),  -- Use function for lifetime change
+            one_day_change(NEW.fund_id),  
+            one_week_change(NEW.fund_id),  
+            one_month_change(NEW.fund_id),  
+            three_month_change(NEW.fund_id),  
+            six_month_change(NEW.fund_id),  
+            one_year_change(NEW.fund_id),  
+            lifetime_change(NEW.fund_id), 
             earliest_dt,
             latest_dt,
             max_value,
             min_value,
-            fund_std_dev(NEW.fund_id),  -- Use function for standard deviation
+            fund_std_dev(NEW.fund_id), 
             NEW.price
         );
 
@@ -218,10 +329,9 @@ END //
 
 CREATE PROCEDURE calculate_fund_rank()
 BEGIN
-    -- Calculate fund ranks based on returns in the specified order
     SET @rank := 0;
     UPDATE fund
-    SET fund_rank = NULL; -- Reset ranks first
+    SET fund_rank = NULL; 
     
     UPDATE fund
     SET fund_rank = (@rank := @rank + 1)
@@ -235,7 +345,6 @@ BEGIN
     DECLARE cur CURSOR FOR SELECT DISTINCT category_id FROM fund;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
     
-    -- Cursor to iterate over each category
     OPEN cur;
     category_loop: LOOP
         FETCH cur INTO cat_id;
@@ -243,10 +352,9 @@ BEGIN
             LEAVE category_loop;
         END IF;
         
-        -- Rank funds within the current category
         SET @category_rank := 0;
         UPDATE fund
-        SET fund_category_rank = NULL -- Reset ranks first
+        SET fund_category_rank = NULL
         WHERE category_id = cat_id;
         
         UPDATE fund
