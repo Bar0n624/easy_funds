@@ -19,7 +19,7 @@ const Login = () => {
             if (response.status === 200) {
                 const uid = response.data.user_id;
                 alert('Login successful');
-                navigate('/home', { state: { uid } });
+                navigate('/home', { state: { uid, name} });
             } else {
                 throw new Error('Login failed!');
             }

@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginScreen from './screens/LoginScreen';
 import SigninScreen from './screens/SigninScreen';
 import HomeScreen from './screens/HomeScreen';
-import SearchScreen from "./screens/SearchScreen";
 import AllCategories from "./screens/AllCategories";
 import './styles/styles.css'
 import AllCompanies from "./screens/AllCompanies";
@@ -21,7 +20,6 @@ function App() {
             <Route path="/" element={<LoginScreen />} />
             <Route path="/signup" element={<SigninScreen />} />
             <Route path="/home" element={<HomeScreen />} />
-            <Route path="/search" element={<SearchScreen />} />
             <Route path="/all-categories" element={<AllCategories />} />
             <Route path="/all-companies" element={<AllCompanies />} />
             <Route path="/all-funds" element={<AllFunds />} />

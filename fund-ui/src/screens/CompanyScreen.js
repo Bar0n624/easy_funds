@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import SmallFundList from '../components/SmallFundList';
 import SideBar from "../components/SideBar";
+import SearchBar from "../components/SearchBar";
 
 const CompanyScreen = () => {
     const [data, setData] = useState(null);
@@ -13,6 +14,7 @@ const CompanyScreen = () => {
     const navigate = useNavigate();
     const uid = location.state?.uid;
     const companyId = location.state?.companyId;
+    const name = location.state?.name;
 
     useEffect(() => {
         if (!companyId) {
@@ -45,18 +47,12 @@ const CompanyScreen = () => {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <SideBar uid={uid}/>
+            <SideBar uid={uid} username={name}/>
             <main className="ml-64 p-8">
                 <div className="max-w-7xl mx-auto">
                     <h1 className="text-4xl font-bold text-gray-800 mb-4 p-3 text-center">{data?.company_name}</h1>
-                    <div className="mb-8">
-                        <input
-                            type="text"
-                            placeholder="Search funds..."
-                            value={searchQuery}
-                            onChange={handleSearchChange}
-                            className="w-full p-6 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                    <div className="flex justify-center mb-8">
+                        <SearchBar query={searchQuery} onChange={handleSearchChange}/>
                     </div>
                     {loading ? (
                         <div className="flex justify-center items-center h-64">
@@ -67,7 +63,7 @@ const CompanyScreen = () => {
                             {error}
                         </div>
                     ) : (
-                        data && <SmallFundList data={{ results: filteredFunds }} uid={uid} />
+                        data && <SmallFundList data={{results: filteredFunds}} uid={uid}/>
                     )}
                 </div>
             </main>

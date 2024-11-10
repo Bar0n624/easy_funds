@@ -7,6 +7,16 @@
     overflow: hidden;
 }
 
+.search-item {
+    height: 60px;
+    overflow: hidden;
+}
+
+.search-item:hover {
+    height: auto;
+}
+
+
 .fund-item:hover {
     height: auto;
 }
@@ -28,5 +38,12 @@
     white-space: normal;
     text-overflow: unset;
 }
+
+.search-item:hover .fund-text .fund-inner{
+    overflow: visible;
+    white-space: normal;
+    text-overflow: unset;
+}
+
 
 

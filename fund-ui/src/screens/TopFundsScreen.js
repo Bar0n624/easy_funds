@@ -11,6 +11,7 @@ const TopFundsScreen = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const uid = location.state?.uid;
+    const name = location.state?.name;
 
     useEffect(() => {
         if (!uid) {
@@ -51,7 +52,7 @@ const TopFundsScreen = () => {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <SideBar uid={uid} />
+            <SideBar uid={uid} username={name}/>
             <main className="ml-64 p-8">
                 <div className="max-w-7xl mx-auto">
                     <h1 className="text-4xl font-bold text-gray-800 mb-4 p-3 text-center">Top Funds</h1>

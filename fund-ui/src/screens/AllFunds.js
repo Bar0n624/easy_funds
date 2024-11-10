@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from '../components/SideBar';
 import FundDisplay from '../components/FundDisplay';
+import SearchBar from '../components/SearchBar';
 
 export default function AllFunds() {
     const [data, setData] = useState(null);
@@ -13,6 +14,7 @@ export default function AllFunds() {
     const navigate = useNavigate();
 
     const user_id = location.state?.uid;
+    const name = location.state?.name;
 
     useEffect(() => {
         if (!user_id) {
@@ -45,18 +47,12 @@ export default function AllFunds() {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <Sidebar uid={user_id}/>
+            <Sidebar uid={user_id} username={name}/>
             <main className="ml-64 p-8">
                 <div className="max-w-7xl mx-auto">
-                    <h1 className="text-4xl font-bold text-gray-800 mb-4 p-3">All Funds</h1>
-                    <div className="mb-8">
-                        <input
-                            type="text"
-                            placeholder="Search funds..."
-                            value={searchQuery}
-                            onChange={handleSearchChange}
-                            className="w-full p-6 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                    <h1 className="text-4xl font-bold text-gray-800 mb-4 p-3 text-center">All Funds</h1>
+                    <div className="flex justify-center mb-8">
+                        <SearchBar query={searchQuery} onChange={handleSearchChange} />
                     </div>
                     {loading ? (
                         <div className="flex justify-center items-center h-64">

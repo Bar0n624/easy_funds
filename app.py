@@ -246,7 +246,7 @@ def load_fund_graph_data():
         cur.close()
         conn.close()
         return jsonify(res), ERR_SUCCESS
-    
+
 
 """Search by fund name
 
@@ -272,7 +272,7 @@ def load_search_fund():
 
     try:
         cur.execute(
-            "SELECT DISTINCT fund_name.fund_id, fund_name.fund_name "
+            "SELECT DISTINCT fund_name.fund_id, fund_name.fund_name, fund.one_year "
             "FROM fund_name "
             "JOIN fund ON fund_name.fund_id = fund.fund_id "
             "WHERE fund_name.fund_name LIKE %s "
@@ -280,7 +280,7 @@ def load_search_fund():
             (search_fmt,),
         )
         rec = cur.fetchall()
-        res["results"] = [[r["fund_id"], r["fund_name"]] for r in rec]
+        res["results"] = [[r["fund_id"], r["fund_name"], r["one_year"]] for r in rec]
     except Error as e:
         print(e)
         cur.close()
@@ -519,15 +519,17 @@ def watchlist_list():
             "JOIN watchlist ON watchlist.fund_id = fund_name.fund_id "
             "WHERE watchlist.user_id = %s "
             "ORDER BY fund.fund_rank;",
-            (user_id, )
+            (user_id,),
         )
         rec = cur.fetchall()
-        res['results'] = [[r['fid'], r['fname'], r['one_year'], r['one_day']] for r in rec]
+        res["results"] = [
+            [r["fid"], r["fname"], r["one_year"], r["one_day"]] for r in rec
+        ]
     except Error as e:
         print(e)
         cur.close()
         conn.close()
-        return jsonify({"error" : "Error fetching watchlist"}),  ERR_INTERNAL_ALL
+        return jsonify({"error": "Error fetching watchlist"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
@@ -596,7 +598,9 @@ def add_many_watchlist():
     finally:
         cur.close()
         conn.close()
-        return jsonify({"message": "Added multiple items to watchlist"}), ERR_SUCCESS_NEW
+        return jsonify(
+            {"message": "Added multiple items to watchlist"}
+        ), ERR_SUCCESS_NEW
 
 
 """Add to portfolio
@@ -769,6 +773,7 @@ def top_fund():
         cur.close()
         conn.close()
         return jsonify(res), ERR_SUCCESS
+
 
 if __name__ == "__main__":
     mysql_connect()

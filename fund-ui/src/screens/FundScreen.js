@@ -14,6 +14,7 @@ export default function FundScreen() {
   const location = useLocation();
   const navigate = useNavigate();
   const { fundId, uid } = location.state;
+  const name = location.state?.name;
 
   useEffect(() => {
     if (!uid || !fundId) {
@@ -58,7 +59,7 @@ export default function FundScreen() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Sidebar uid={uid} />
+      <Sidebar uid={uid} username={name} />
       <main className="ml-64 p-8">
         <div className="max-w-7xl mx-auto">
           {loading ? (

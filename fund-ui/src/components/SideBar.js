@@ -1,12 +1,18 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FiLogOut } from 'react-icons/fi';
 
-const SideBar = ({ uid }) => {
+const SideBar = ({ uid, username }) => {
     const location = useLocation();
     const currentPath = location.pathname;
+    const navigate = useNavigate();
+
+    const handleSignOut = () => {
+        // Add signout logic here
+        navigate('/');
+    };
 
     const menuItems = [
-        { path: '/search', label: 'Search' },
         { path: '/top-funds', label: 'Top Funds' },
         { path: '/all-categories', label: 'Categories' },
         { path: '/all-companies', label: 'Companies' },
@@ -16,11 +22,11 @@ const SideBar = ({ uid }) => {
     ];
 
     return (
-        <div className="fixed top-0 left-0 h-full w-64 bg-gray-800 text-white shadow-lg">
+        <div className="fixed top-0 left-0 h-full w-64 bg-gray-800 text-white shadow-lg flex flex-col justify-between">
             <div className="p-6">
                 <Link
                     to="/home"
-                    state={{ uid: uid }}
+                    state={{ uid: uid , name: username}}
                     className="block mb-8 flex items-center"
                 >
                     <span role="img" aria-label="chart" className="mr-2">📊</span>
@@ -31,7 +37,7 @@ const SideBar = ({ uid }) => {
                         <li key={item.path}>
                             <Link
                                 to={item.path}
-                                state={{ uid: uid }}
+                                state={{ uid: uid , name: username}}
                                 className={`block py-2 px-4 rounded transition-colors ${
                                     currentPath === item.path
                                         ? 'bg-blue-600 text-white'
@@ -43,6 +49,16 @@ const SideBar = ({ uid }) => {
                         </li>
                     ))}
                 </ul>
+            </div>
+            <div className="p-6">
+                <p>Logged in as: {username}</p>
+                <button
+                    onClick={handleSignOut}
+                    className="mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center"
+                >
+                    <FiLogOut className="mr-2" />
+                    Sign Out
+                </button>
             </div>
         </div>
     );
