@@ -2,29 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from '../components/SideBar';
-import HomeDisplay from '../components/HomeDisplay';
+import CategoryDisplay from '../components/CategoryDisplay';
 
-export default function Home() {
+export default function AllCategories() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
     const location = useLocation();
     const navigate = useNavigate();
 
-    // Extract user_id from the location state
     const user_id = location.state?.uid;
 
     useEffect(() => {
-
         if (!user_id) {
             navigate('/');
             return;
         }
 
-        // Fetch data from the backend
         const fetchData = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/home?u_id=${user_id}`);
+                const response = await axios.get(`http://localhost:5000/all/category`);
                 setData(response.data);
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -34,15 +32,32 @@ export default function Home() {
             }
         };
 
-        // Call fetchData only once
         fetchData();
     }, [user_id, navigate]);
+
+    const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value);
+    };
+
+    const filteredCategories = data?.results.filter(category =>
+        category[1].toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
         <div className="min-h-screen bg-gray-100">
             <Sidebar userId={user_id}/>
             <main className="ml-64 p-8">
                 <div className="max-w-7xl mx-auto">
+                    <h1 className="text-4xl font-bold text-gray-800 mb-4 p-3">All Categories</h1>
+                    <div className="mb-8">
+                        <input
+                            type="text"
+                            placeholder="Search categories..."
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            className="w-full p-6 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
                     {loading ? (
                         <div className="flex justify-center items-center h-64">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -52,7 +67,7 @@ export default function Home() {
                             {error}
                         </div>
                     ) : (
-                        data && <HomeDisplay data={data}/>
+                        data && <CategoryDisplay data={{ results: filteredCategories }} userId={user_id}/>
                     )}
                 </div>
             </main>

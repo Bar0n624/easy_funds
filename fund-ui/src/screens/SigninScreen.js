@@ -1,84 +1,129 @@
-import React from "react";
-import "../styles/styles.css";
-import { Link } from "react-router-dom";
-import {useNavigate} from 'react-router-dom';
-import axios from "axios";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-export default function Signup() {
-    const [name, setName] = React.useState("");
-    const [password, setPassword] = React.useState("");
-    const [password_confirm, setConfirm] = React.useState("");
+const Signup = () => {
+    const [name, setName] = useState('');
+    const [password, setPassword] = useState('');
+    const [passwordConfirm, setConfirm] = useState('');
     const navigate = useNavigate();
 
     const handleOnSubmit = async (e) => {
         e.preventDefault();
 
-        if (password !== password_confirm) {
-            alert("Passwords do not match");
+        if (password !== passwordConfirm) {
+            alert('Passwords do not match');
             return;
         }
 
         try {
-            const response = await axios.post("http://localhost:5000/register", { username: name, password: password });
+            const response = await axios.post('http://localhost:5000/register', {
+                username: name,
+                password: password,
+            });
 
             if (response.status === 201) {
                 const uid = response.data.user_id;
-                console.log(uid);
-                alert("User registered successfully");
+                alert('User registered successfully');
                 navigate('/home', { state: { uid } });
             } else {
-                throw new Error(response.statusText || "Registration failed!");
+                throw new Error(response.statusText || 'Registration failed!');
             }
         } catch (error) {
-            alert("An error occurred!");
-            setPassword("");
-            setConfirm("");
-            setName("");
+            alert('An error occurred!');
+            setPassword('');
+            setConfirm('');
+            setName('');
             console.error('Error:', error);
         }
     };
 
-
-
     return (
-        <div className="wrapper signUp">
-            <div className="illustration">
-                {/*<img src="https://source.unsplash.com/random" alt="illustration" />*/}
-            </div>
-            <div className="form">
-                <div className="heading">CREATE AN ACCOUNT</div>
-                <form>
-                    <div>
-                        <label htmlFor="name">Name</label>
-                        <input type="text" id="name" placeholder="Enter your name" value={name} onChange={(e) => setName(e.target.value)}/>
-                    </div>
-                    <div>
-                        <label htmlFor="password">Password</label>
-                        <input
-                            type="password"
-                            id="password"
-                            placeholder="Enter your password"
-                            value={password} onChange={(e) => setPassword(e.target.value)}
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="password">Confirm Password</label>
-                        <input
-                            type="password"
-                            id="password_confirm"
-                            placeholder="Confirm password"
-                            value={password_confirm} onChange={(e) => setConfirm(e.target.value)}
-                        />
-                    </div>
-                    <button type="submit" onClick={handleOnSubmit}>Submit</button>
-                    <h2 align="center" class="or">
-                        OR
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
+                <div>
+                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        Create an Account
                     </h2>
+                </div>
+                <form className="mt-8 space-y-6" onSubmit={handleOnSubmit}>
+                    <div className="rounded-md shadow-sm space-y-4">
+                        <div>
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                                Name
+                            </label>
+                            <input
+                                id="name"
+                                type="text"
+                                required
+                                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                                placeholder="Enter your name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                Password
+                            </label>
+                            <input
+                                id="password"
+                                type="password"
+                                required
+                                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                                placeholder="Enter your password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="password-confirm" className="block text-sm font-medium text-gray-700">
+                                Confirm Password
+                            </label>
+                            <input
+                                id="password-confirm"
+                                type="password"
+                                required
+                                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                                placeholder="Confirm password"
+                                value={passwordConfirm}
+                                onChange={(e) => setConfirm(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <button
+                            type="submit"
+                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                            Sign up
+                        </button>
+                    </div>
                 </form>
-                <p>
-                    Have an account ? <Link to="/"> Login </Link>
-                </p>
+
+                <div className="mt-6">
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-2 bg-white text-gray-500">Or</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="text-sm text-center">
+                    <p className="text-gray-600">
+                        Have an account?{' '}
+                        <Link to="/" className="font-medium text-blue-600 hover:text-blue-500">
+                            Login
+                        </Link>
+                    </p>
+                </div>
             </div>
         </div>
     );
-}
+};
+
+export default Signup;

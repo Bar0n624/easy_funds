@@ -48,7 +48,7 @@ const SearchScreen= () => {
         <div className="min-h-screen bg-gray-100">
             <Sidebar userId={userId} />
             <main className="ml-64 p-8">
-                <div className="max-w-4xl mx-auto">
+                <div className="flex flex-col items-center">
                     <h1 className="text-3xl font-bold text-gray-800 mb-8">Search Funds</h1>
                     <SearchBar query={query} onChange={handleSearch} />
                     {results.length > 0 && (
