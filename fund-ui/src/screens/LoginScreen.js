@@ -1,12 +1,34 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import "../styles/styles.css";
 
-const preventRefresh = (e) => {
-    e.preventDefault();
-};
-
 export default function Login() {
+    const [name, setName] = useState("");
+    const [password, setPassword] = useState("");
+    const navigate = useNavigate();
+
+    const handleOnSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            const response = await axios.post("http://localhost:5000/login", { "username": name, "password": password });
+
+            if (response.status === 200) {
+                const uid = response.data.user_id;
+                alert("Login successful");
+                navigate('/home', { state: { uid } });
+            } else {
+                throw new Error("Login failed!");
+            }
+        } catch (error) {
+            alert("An error occurred!");
+            setName("");
+            setPassword("");
+            console.error('Error:', error);
+        }
+    };
+
     return (
         <div className="wrapper signIn">
             <div className="illustration">
@@ -14,21 +36,31 @@ export default function Login() {
             </div>
             <div className="form">
                 <div className="heading">LOGIN</div>
-                <form>
+                <form onSubmit={handleOnSubmit}>
                     <div>
                         <label htmlFor="name">Name</label>
-                        <input type="text" id="name" placeholder="Enter your name" />
+                        <input
+                            type="text"
+                            id="name"
+                            placeholder="Enter your name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                        />
                     </div>
                     <div>
-                        <label htmlFor="e-mail">E-Mail</label>
-                        <input type="email" id="e-mail" placeholder="Enter you mail" />
+                        <label htmlFor="password">Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
                     </div>
-                    <button type="submit" onClick={preventRefresh}>
-                        Submit
-                    </button>
+                    <button type="submit">Submit</button>
                 </form>
                 <p>
-                    Don't have an account ? <Link to="/signup"> Sign In </Link>
+                    Don't have an account? <Link to="/signup"> Sign Up </Link>
                 </p>
             </div>
         </div>

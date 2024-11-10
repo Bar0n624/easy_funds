@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, request, jsonify
 import mysql.connector
 from mysql.connector import Error
 import hashlib
@@ -9,149 +9,129 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-MYSQL_CONN = None
-
 
 def mysql_connect():
-    try:
-        with open(".passwd.txt", "r") as file:
-            passwd = file.read().strip()
-        global MYSQL_CONN
-        MYSQL_CONN = mysql.connector.connect(
-            host="bar0n.live", user="fund", password=passwd, database="fund"
-        )
-        if MYSQL_CONN.is_connected():
-            print("Connected to MySQL database")
-    except Error as e:
-        print(f"Could not connect to database: {e}")
-        exit(1)
+    with open(".passwd.txt", "r") as file:
+        passwd = file.read().strip()
+    return mysql.connector.connect(
+        host="bar0n.live", user="fund", password=passwd, database="fund"
+    )
 
 
-"""Register a user
-"""
-
-
+# Register a user
 @app.route("/register", methods=["POST"])
 def add_user():
     data = request.get_json()
     if "username" not in data or "password" not in data:
-        print("username pass error")
         return jsonify({"error": "Username and password required"}), ERR_INVALID
 
     user_name = data["username"]
     password = data["password"]
-    salt = os.urandom(16).hex()  # 16-byte random salt
-    password_hash = hashlib.sha256(
-        (password + salt).encode()
-    ).hexdigest()  # sha256(password + salt)
+    salt = os.urandom(16).hex()
+    password_hash = hashlib.sha256((password + salt).encode()).hexdigest()
 
-    cur = MYSQL_CONN.cursor()
+    conn = mysql_connect()
+    cur = conn.cursor()
     try:
         cur.execute(
             "INSERT INTO user (user_name, password_hash, salt) VALUES (%s, %s, %s)",
             (user_name, password_hash, salt),
         )
-        MYSQL_CONN.commit()
+        conn.commit()
+        cur.execute("SELECT user_id FROM user WHERE user_name = %s", (user_name,))
+        user_id = cur.fetchone()[0]
     except Error as e:
         print(e)
         return jsonify({"message": "Error registering user"}), ERR_INVALID
-    cur.execute("SELECT user_id FROM user WHERE user_name = %s", (user_name,))
-    user_id = cur.fetchone()[0]
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify(
         {"message": "User registered successfully", "user_id": user_id}
     ), ERR_SUCCESS_NEW
 
 
-"""User login
-"""
-
-
+# User login
 @app.route("/login", methods=["POST"])
 def verify_user():
     data = request.get_json()
-
     if "username" not in data or "password" not in data:
         return jsonify({"error": "Username and password required"}), ERR_INVALID
 
     user_name = data["username"]
     password = data["password"]
 
-    cur = MYSQL_CONN.cursor(dictionary=True)
-    cur.execute(
-        "SELECT password_hash, salt FROM user where user_name = %s", (user_name,)
-    )
-    rec = cur.fetchone()
-    cur.close()
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
+    try:
+        cur.execute(
+            "SELECT password_hash, salt, user_id FROM user where user_name = %s",
+            (user_name,),
+        )
+        rec = cur.fetchone()
+    except Error as e:
+        print(e)
+        return jsonify({"error": "Database query error"}), ERR_INTERNAL_ALL
+    finally:
+        cur.close()
+        conn.close()
 
     if rec:
         salt = rec["salt"]
         expected_hash = rec["password_hash"]
-
+        uid = rec["user_id"]
         password_hash = hashlib.sha256((password + salt).encode()).hexdigest()
         if password_hash == expected_hash:
-            return jsonify({"message": "Login successful"}), ERR_SUCCESS
+            return jsonify({"message": "Login successful", "user_id": uid}), ERR_SUCCESS
     return jsonify({"error": "Invalid credentials"}), ERR_UNAUTHORIZED
 
 
-"""Home page
-
-    * Get the top 10 funds ordered by 1y, 6m, 3m and 1m each.
-    * Get the funds being tracked by the user.
-
-    e.g. localhost:5000/home?u_id=1
-
-    Returns a JSON object.
-"""
-
-
+# Home page
 @app.route("/home", methods=["GET"])
 def load_home():
     user_id = request.args.get("u_id")
-    if not user_id:
-        return jsonify({"error": "User ID required"}), ERR_INVALID
+    if not user_id or not user_id.isdigit():
+        return jsonify({"error": "Valid User ID required"}), ERR_INVALID
 
     res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
 
     def Query(cur, val, lim=5):
-        cur.execute(
-            f"SELECT fund_company.company_name AS cname, fund_name.fund_name AS fname, ROUND(fund.{val}, 2) AS price FROM fund_name "
+        query = (
+            "SELECT fund_company.company_name AS cname, fund_name.fund_name AS fname, "
+            "ROUND(fund.{val}, 2) AS price FROM fund_name "
             "JOIN fund_company ON fund_name.company_id = fund_company.company_id "
             "JOIN fund ON fund_name.fund_id = fund.fund_id "
             f"ORDER BY fund.{val} DESC LIMIT {lim};"
-        )
+        ).format(val=val)
+        cur.execute(query)
         rec = cur.fetchmany(size=lim)
         return [[r["cname"], r["fname"], r["price"]] for r in rec]
 
     try:
-        # Top 5 funds for one year
         res["one_year"] = Query(cur, "one_year")
-
-        # Top 5 funds for six months
         res["six_month"] = Query(cur, "six_month")
-
-        # Top 5 funds for three months
         res["three_month"] = Query(cur, "three_month")
-
-        # Top 5 funds for one month
         res["one_month"] = Query(cur, "one_month")
 
-        # User tracked funds
         cur.execute(
-            "SELECT fund_name.fund_id as fid, fund_name.fund_name as fname, fund.lifetime as lifetime, fund.one_day as one_day FROM fund_name "
-            f"JOIN watchlist ON (fund_name.fund_id = watchlist.fund_id AND watchlist.user_id = {user_id}) "
-            "JOIN fund ON fund_name.fund_id = fund.fund_id ORDER BY fund.fund_rank;"
+            "SELECT fund_name.fund_id as fid, fund_name.fund_name as fname, "
+            "fund.lifetime as lifetime, fund.one_day as one_day FROM fund_name "
+            "JOIN watchlist ON (fund_name.fund_id = watchlist.fund_id AND watchlist.user_id = %s) "
+            "JOIN fund ON fund_name.fund_id = fund.fund_id ORDER BY fund.fund_rank;",
+            (user_id,),
         )
         rec = cur.fetchall()
         res["watchlist"] = [
             [r["fid"], r["fname"], r["lifetime"], r["one_day"]] for r in rec
         ]
     except Error as e:
-        print(e)
-        cur.close()
+        print(f"Database error: {e}")
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify(res), ERR_SUCCESS
 
 
@@ -174,7 +154,8 @@ def load_fund():
         return jsonify({"error": "Fund ID required"}), ERR_INVALID
 
     res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
 
     try:
         # Get fund info
@@ -225,7 +206,9 @@ def load_fund():
         print(e)
         cur.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify(res), ERR_SUCCESS
 
 
@@ -247,7 +230,8 @@ def load_fund_graph_data():
         return jsonify({"error": "Fund ID required"}), ERR_INVALID
 
     res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
 
     try:
         cur.execute(
@@ -261,7 +245,9 @@ def load_fund_graph_data():
         print(e)
         cur.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify(res), ERR_SUCCESS
 
 
@@ -282,7 +268,8 @@ def load_search_fund():
         return jsonify({"error": "Empty search query"}), ERR_INVALID
 
     res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
 
     search_fmt = f"%{'%'.join(search.split())}%"  # "example fund" -> "%Example%Fund%"
 
@@ -301,7 +288,9 @@ def load_search_fund():
         print(e)
         cur.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify(res), ERR_SUCCESS
 
 
@@ -316,8 +305,8 @@ def load_search_fund():
 @app.route("/all/fund", methods=["GET"])
 def load_all_fund():
     res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
-
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
     try:
         cur.execute(
             "SELECT DISTINCT fund_id AS f_id, fund_name as f_name FROM fund_name;"
@@ -328,7 +317,9 @@ def load_all_fund():
         print(e)
         cur.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify(res), ERR_SUCCESS
 
 
@@ -343,7 +334,8 @@ def load_all_fund():
 @app.route("/all/company", methods=["GET"])
 def load_all_company():
     res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
 
     try:
         cur.execute(
@@ -355,7 +347,9 @@ def load_all_company():
         print(e)
         cur.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify(res), ERR_SUCCESS
 
 
@@ -370,7 +364,8 @@ def load_all_company():
 @app.route("/all/category", methods=["GET"])
 def load_all_category():
     res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
 
     try:
         cur.execute(
@@ -382,7 +377,9 @@ def load_all_category():
         print(e)
         cur.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify(res), ERR_SUCCESS
 
 
@@ -397,8 +394,8 @@ def load_all_category():
 @app.route("/top/company", methods=["GET"])
 def load_top_company():
     res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
-
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
     try:
         cur.execute(
             "SELECT DISTINCT fund_company.company_id AS c_id, fund_company.company_name AS c_name, fund.one_year as one_year "
@@ -413,7 +410,9 @@ def load_top_company():
         print(e)
         cur.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify(rec), ERR_SUCCESS
 
 
@@ -428,7 +427,8 @@ def load_top_company():
 @app.route("/top/category", methods=["GET"])
 def load_top_category():
     res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
 
     try:
         cur.execute(
@@ -444,7 +444,9 @@ def load_top_category():
         print(e)
         cur.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify(rec), ERR_SUCCESS
 
 
@@ -468,7 +470,8 @@ def load_search_company():
         return jsonify({"error": "Empty search query"}), ERR_INVALID
 
     res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
 
     try:
         cur.execute(
@@ -496,7 +499,9 @@ def load_search_company():
         print(e)
         cur.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify(res), ERR_SUCCESS
 
 
@@ -520,7 +525,8 @@ def load_search_category():
         return jsonify({"error": "Empty search query"}), ERR_INVALID
 
     res = {}
-    cur = MYSQL_CONN.cursor(dictionary=True)
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
 
     try:
         cur.execute(
@@ -548,7 +554,9 @@ def load_search_category():
         print(e)
         cur.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify(res), ERR_SUCCESS
 
 
@@ -563,17 +571,20 @@ def add_watchlist():
         return jsonify({"error": "User ID and Fund ID required"}), ERR_INVALID
     user_id = data["user_id"]
     fund_id = data["fund_id"]
-    cur = MYSQL_CONN.cursor()
+    conn = mysql_connect()
+    cur = conn.cursor()
     try:
         cur.execute(
             "INSERT INTO watchlist (user_id, fund_id) VALUES (%s, %s)",
             (user_id, fund_id),
         )
-        MYSQL_CONN.commit()
+        conn.commit()
     except Error as e:
         print(e)
         return jsonify({"message": "Error adding to watchlist"}), ERR_INVALID
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify({"message": "Added to watchlist"}), ERR_SUCCESS_NEW
 
 
@@ -595,16 +606,18 @@ def add_many_watchlist():
         return jsonify(
             {"error": "Each item must contain User ID and Fund ID"}
         ), ERR_INVALID
-
-    cur = MYSQL_CONN.cursor()
+    conn = mysql_connect()
+    cur = conn.cursor()
     try:
         query = "INSERT INTO watchlist (user_id, fund_id) VALUES (%s, %s)"
         cur.executemany(query, [(item["user_id"], item["fund_id"]) for item in items])
-        MYSQL_CONN.commit()
+        conn.commit()
     except Error as e:
         print(e)
         return jsonify({"message": "Error adding items to watchlist"}), ERR_INVALID
-    cur.close()
+    finally:
+        cur.close()
+        conn.close
     return jsonify({"message": "Added multiple items to watchlist"}), ERR_SUCCESS_NEW
 
 
@@ -635,7 +648,8 @@ def add_portfolio():
     sold_on = data.get("sold_on", None)
     sold_for = data.get("sold_for", None)
     return_amount = data.get("return_amount", None)
-    cur = MYSQL_CONN.cursor()
+    conn = mysql_connect()
+    cur = conn.cursor()
     try:
         cur.execute(
             """INSERT INTO portfolio (user_id, fund_id, bought_on, bought_for, invested_amount, sold_on, sold_for, return_amount)
@@ -651,11 +665,13 @@ def add_portfolio():
                 return_amount,
             ),
         )
-        MYSQL_CONN.commit()
+        conn.commit()
     except Error as e:
         print(e)
         return jsonify({"message": "Error adding to portfolio"}), ERR_INVALID
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify({"message": "Added to portfolio"}), ERR_SUCCESS_NEW
 
 
@@ -676,14 +692,15 @@ def update_portfolio():
     sold_on = data.get("sold_on", None)
     sold_for = data.get("sold_for", None)
     return_amount = data.get("return_amount", None)
-    cur = MYSQL_CONN.cursor()
+    conn = mysql_connect()
+    cur = conn.cursor()
     try:
         cur.execute(
             """UPDATE portfolio SET sold_on=%s, sold_for=%s, return_amount=%s
                WHERE user_id=%s AND fund_id=%s AND bought_on=%s""",
             (sold_on, sold_for, return_amount, user_id, fund_id, bought_on),
         )
-        MYSQL_CONN.commit()
+        conn.commit()
     except Error as e:
         print(e)
         return jsonify({"message": "Error updating portfolio"}), ERR_INVALID
@@ -701,7 +718,8 @@ def list_portfolio():
     if "user_id" not in data:
         return jsonify({"error": "User ID required"}), ERR_INVALID
     user_id = data["user_id"]
-    cur = MYSQL_CONN.cursor()
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
     res = {}
     try:
         cur.execute(
@@ -729,7 +747,9 @@ def list_portfolio():
     except Error as e:
         print(e)
         return jsonify({"message": "Error fetching portfolio"}), ERR_INVALID
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
     return jsonify(res), ERR_SUCCESS
 
 
