@@ -4,9 +4,10 @@ from mysql.connector import Error
 import hashlib
 import os
 from http_err import *
+from flask_cors import CORS
 
 app = Flask(__name__)
-
+CORS(app)
 
 MYSQL_CONN = None
 
@@ -33,7 +34,6 @@ def mysql_connect():
 @app.route("/register", methods=["POST"])
 def add_user():
     data = request.get_json()
-    print(data)
     if "username" not in data or "password" not in data:
         print("username pass error")
         return jsonify({"error": "Username and password required"}), ERR_INVALID

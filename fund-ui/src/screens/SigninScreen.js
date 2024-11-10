@@ -2,6 +2,7 @@ import React from "react";
 import "../styles/styles.css";
 import { Link } from "react-router-dom";
 import {useNavigate} from 'react-router-dom';
+import axios from "axios";
 
 export default function Signup() {
     const [name, setName] = React.useState("");
@@ -11,37 +12,25 @@ export default function Signup() {
 
     const handleOnSubmit = async (e) => {
         e.preventDefault();
+
         if (password !== password_confirm) {
             alert("Passwords do not match");
             return;
         }
+
         try {
-            const response = await fetch('http://localhost:5000/register', {
-                method: "post",
-                body: JSON.stringify({ "username": name, "password": password}),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+            const response = await axios.post("http://localhost:5000/register", { username: name, password: password });
 
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || "HTTP error!");
-            }
-
-            console.warn(result);
-
-            if (result.success) {
-                var uid=result.user_id;
+            if (response.status === 201) {
+                const uid = response.data.user_id;
+                console.log(uid);
                 alert("User registered successfully");
                 navigate('/home', { state: { uid } });
             } else {
-                alert(result.message);
+                throw new Error(response.statusText || "Registration failed!");
             }
         } catch (error) {
-            alert("User already exists!" );
+            alert("An error occurred!");
             setPassword("");
             setConfirm("");
             setName("");
