@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 
-const HomeDisplay = ({ data }) => {
+const HomeDisplay = ({ data, uid}) => {
     const navigate = useNavigate();
     const periods = {
         one_month: "1 Month",
@@ -11,8 +11,9 @@ const HomeDisplay = ({ data }) => {
         one_year: "1 Year"
     };
 
+    console.log(data);
+
     const handleFundClick = (fundId) => {
-        const uid = new URLSearchParams(window.location.search).get('uid');
         navigate('/fund', { state: { fundId, uid } });
     };
 
@@ -40,9 +41,9 @@ const HomeDisplay = ({ data }) => {
                                         onClick={() => handleFundClick(fund[0])}
                                         className="hover:bg-gray-50 cursor-pointer transition-colors"
                                     >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{fund[0]}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{fund[1]}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{fund[2]}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{fund[3]}</td>
                                     </tr>
                                 ))}
                                 </tbody>

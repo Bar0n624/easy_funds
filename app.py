@@ -99,7 +99,7 @@ def load_home():
 
     def Query(cur, val, lim=5):
         query = (
-            "SELECT fund_company.company_name AS cname, fund_name.fund_name AS fname, "
+            "SELECT fund_company.company_name AS cname, fund_name.fund_name AS fname, fund.fund_id AS fid,"
             "ROUND(fund.{val}, 2) AS price FROM fund_name "
             "JOIN fund_company ON fund_name.company_id = fund_company.company_id "
             "JOIN fund ON fund_name.fund_id = fund.fund_id "
@@ -107,7 +107,7 @@ def load_home():
         ).format(val=val)
         cur.execute(query)
         rec = cur.fetchmany(size=lim)
-        return [[r["cname"], r["fname"], r["price"]] for r in rec]
+        return [[r["fid"], r["cname"], r["fname"], r["price"]] for r in rec]
 
     try:
         res["one_year"] = Query(cur, "one_year")
@@ -162,7 +162,7 @@ def load_fund():
         cur.execute(
             "SELECT fund.one_week, fund.one_month, fund.three_month, fund.six_month, "
             "fund.one_year, fund.lifetime, fund.value, fund.standard_deviation, "
-            "fund_company.company_name, fund_category.category_name, fund_name.fund_name "
+            "fund_company.company_name, fund_category.category_name, fund_name.fund_name, fund.fund_id "
             "FROM fund "
             "JOIN fund_name ON (fund.fund_id = fund_name.fund_id AND fund.fund_id = %s) "
             "JOIN fund_company ON fund_name.company_id = fund_company.company_id "
@@ -383,73 +383,6 @@ def load_all_category():
     return jsonify(res), ERR_SUCCESS
 
 
-"""Get top fund companies
-
-    e.g. localhost:5000/top/company
-
-    Returns a JSON object.
-"""
-
-
-@app.route("/top/company", methods=["GET"])
-def load_top_company():
-    res = {}
-    conn = mysql_connect()
-    cur = conn.cursor(dictionary=True)
-    try:
-        cur.execute(
-            "SELECT DISTINCT fund_company.company_id AS c_id, fund_company.company_name AS c_name, fund.one_year as one_year "
-            "FROM fund_company "
-            "JOIN fund_name ON fund_company.company_id = fund_name.company_id "
-            "JOIN fund ON fund_name.fund_id = fund.fund_id "
-            "ORDER BY fund.fund_rank limit 5;"
-        )
-        rec = cur.fetchall()
-        res["result"] = [[r["c_id"], r["c_name"], r["one_year"]] for r in rec]
-    except Error as e:
-        print(e)
-        cur.close()
-        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-    finally:
-        cur.close()
-        conn.close()
-    return jsonify(rec), ERR_SUCCESS
-
-
-"""Get top fund categories
-
-    e.g. localhost:5000/top/category
-
-    Returns a JSON object.
-"""
-
-
-@app.route("/top/category", methods=["GET"])
-def load_top_category():
-    res = {}
-    conn = mysql_connect()
-    cur = conn.cursor(dictionary=True)
-
-    try:
-        cur.execute(
-            "SELECT DISTINCT fund_category.category_id AS c_id, fund_category.category_name AS c_name, fund.one_year as one_year "
-            "FROM fund_category "
-            "JOIN fund_name ON fund_category.category_id = fund_name.category_id "
-            "JOIN fund ON fund_name.fund_id = fund.fund_id "
-            "ORDER BY fund.fund_category_rank limit 5;"
-        )
-        rec = cur.fetchall()
-        res["result"] = [[r["c_id"], r["c_name"], r["one_year"]] for r in rec]
-    except Error as e:
-        print(e)
-        cur.close()
-        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-    finally:
-        cur.close()
-        conn.close()
-    return jsonify(rec), ERR_SUCCESS
-
-
 """Search funds by fund company
 
     * Returns the funds for the corresponding `company_id`.
@@ -545,7 +478,7 @@ def load_search_category():
             "JOIN fund_category ON fund_name.category_id = fund_category.category_id "
             "JOIN fund ON fund_name.fund_id = fund.fund_id "
             "WHERE fund_category.category_id = %s "
-            "ORDER BY fund.fund_category_rank DESC;",
+            "ORDER BY fund.fund_category_rank;",
             (c_id,),
         )
         rec = cur.fetchall()

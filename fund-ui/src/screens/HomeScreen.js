@@ -11,12 +11,12 @@ export default function Home() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // Extract user_id from the location state
-    const user_id = location.state?.uid;
+    // Extract uid from the location state
+    const uid = location.state?.uid;
 
     useEffect(() => {
 
-        if (!user_id) {
+        if (!uid) {
             navigate('/');
             return;
         }
@@ -24,7 +24,7 @@ export default function Home() {
         // Fetch data from the backend
         const fetchData = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/home?u_id=${user_id}`);
+                const response = await axios.get(`http://localhost:5000/home?u_id=${uid}`);
                 setData(response.data);
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -36,11 +36,11 @@ export default function Home() {
 
         // Call fetchData only once
         fetchData();
-    }, [user_id, navigate]);
+    }, [uid, navigate]);
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <Sidebar uid={user_id}/>
+            <Sidebar uid={uid}/>
             <main className="ml-64 p-8">
                 <div className="max-w-7xl mx-auto">
                     {loading ? (
@@ -52,7 +52,7 @@ export default function Home() {
                             {error}
                         </div>
                     ) : (
-                        data && <HomeDisplay data={data}/>
+                        data && <HomeDisplay data={data} uid={uid}/>
                     )}
                 </div>
             </main>
