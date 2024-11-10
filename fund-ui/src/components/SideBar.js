@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiLogOut } from 'react-icons/fi';
+import { FiLogOut, FiTrendingUp, FiList, FiBriefcase, FiDollarSign, FiStar, FiPieChart } from 'react-icons/fi';
 
 const SideBar = ({ uid, username }) => {
     const location = useLocation();
@@ -13,12 +13,12 @@ const SideBar = ({ uid, username }) => {
     };
 
     const menuItems = [
-        { path: '/top-funds', label: 'Top Funds' },
-        { path: '/all-categories', label: 'Categories' },
-        { path: '/all-companies', label: 'Companies' },
-        { path: '/all-funds', label: 'Funds' },
-        { path: '/watchlist', label: 'Watchlist' },
-        { path: '/portfolio', label: 'Portfolio' },
+        { path: '/top-funds', label: 'Top Funds', icon: <FiTrendingUp /> },
+        { path: '/all-categories', label: 'Categories', icon: <FiList /> },
+        { path: '/all-companies', label: 'Companies', icon: <FiBriefcase /> },
+        { path: '/all-funds', label: 'Funds', icon: <FiDollarSign /> },
+        { path: '/watchlist', label: 'Watchlist', icon: <FiStar /> },
+        { path: '/portfolio', label: 'Portfolio', icon: <FiPieChart /> },
     ];
 
     return (
@@ -26,7 +26,7 @@ const SideBar = ({ uid, username }) => {
             <div className="p-6">
                 <Link
                     to="/home"
-                    state={{ uid: uid , name: username}}
+                    state={{ uid: uid, name: username }}
                     className="block mb-8 flex items-center"
                 >
                     <span role="img" aria-label="chart" className="mr-2">📊</span>
@@ -37,13 +37,14 @@ const SideBar = ({ uid, username }) => {
                         <li key={item.path}>
                             <Link
                                 to={item.path}
-                                state={{ uid: uid , name: username}}
-                                className={`block py-2 px-4 rounded transition-colors ${
+                                state={{ uid: uid, name: username }}
+                                className={`block py-2 px-4 rounded transition-colors flex items-center ${
                                     currentPath === item.path
                                         ? 'bg-blue-600 text-white'
                                         : 'hover:bg-gray-700'
                                 }`}
                             >
+                                <span className="mr-2">{item.icon}</span>
                                 {item.label}
                             </Link>
                         </li>
