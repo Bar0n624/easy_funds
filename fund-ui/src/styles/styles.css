@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 * {
     margin: 0;
     padding: 0;
@@ -156,6 +160,16 @@
     color: #fff;
 }
 
+.sidebar h2 a {
+    color: #ddd;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.sidebar h2 a:hover {
+    color: #fff;
+}
+
 /* Main content styling */
 .main-content {
     margin-left: 220px;
@@ -224,45 +238,5 @@ tr:nth-child(even) {
 }
 
 tr:hover {
-    background-color: #f1f1f1;
-}
-
-nav {
-    background-color: #333;
-    color: white;
-    padding: 10px;
-}
-
-nav ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-nav li {
-    display: inline;
-    margin-right: 20px;
-}
-
-input {
-    padding: 10px;
-    margin-top: 10px;
-    width: 80%;
-    border: 1px solid #ccc;
-}
-
-ul {
-    margin-top: 10px;
-    padding: 0;
-    list-style-type: none;
-}
-
-li {
-    cursor: pointer;
-    padding: 8px;
-    border: 1px solid #ccc;
-    margin-bottom: 5px;
-}
-
-li:hover {
     background-color: #f1f1f1;
 }

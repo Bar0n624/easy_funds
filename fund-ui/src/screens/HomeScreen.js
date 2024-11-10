@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import HomeDisplay from './HomeDisplay';
-import '../styles/styles.css'; // Make sure to import the CSS file for styling
+import '../styles/styles.css';
+import Sidebar from "../components/SideBar"; // Make sure to import the CSS file for styling
 
 export default function Home() {
     const [data, setData] = useState(null);
@@ -41,17 +42,7 @@ export default function Home() {
     return (
         <div className="home-container">
             {/* Sidebar menu */}
-            <div className="sidebar">
-                <h2>Menu</h2>
-                <ul>
-                    <li><Link to="/search" state={{ uid: user_id }}>Search Screen</Link></li>
-                    <li><Link to="/all-categories" state={{ uid: user_id }}>All Categories</Link></li>
-                    <li><Link to="/all-companies" state={{ uid: user_id }}>All Companies</Link></li>
-                    <li><Link to="/all-funds" state={{ uid: user_id }}>All Funds</Link></li>
-                    <li><Link to="/watchlist" state={{ uid: user_id }}>Watchlist</Link></li>
-                    <li><Link to="/portfolio" state={{ uid: user_id }}>Portfolio</Link></li>
-                </ul>
-            </div>
+            <Sidebar userId={user_id} />
 
             {/* Main content area */}
             <div className="main-content">

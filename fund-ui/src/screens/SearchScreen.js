@@ -1,20 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useLocation, useNavigate, Link } from 'react-router-dom';  // For navigation to fund details page
+import { useLocation, useNavigate } from 'react-router-dom';
+import Sidebar from '../components/SideBar';
+import SearchBar from '../components/SearchBar';
+import SearchResults from '../components/SearchResults';
 
-const SearchScreen = ({ userId }) => {
+const SearchScreen= () => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
     const location = useLocation();
     const navigate = useNavigate();
-    const user_id = location.state?.uid;
-    const uid = user_id;
-    if (!user_id) {
-        navigate('/');
-        return;
-    }
+    const userId = location.state?.uid;
 
-    // Function to fetch search results
+    useEffect(() => {
+        if (!userId) {
+            navigate('/');
+        }
+    }, [userId, navigate]);
+
     const fetchSearchResults = async (searchQuery) => {
         try {
             const response = await axios.get(`http://localhost:5000/search/fund?q=${searchQuery}`);
@@ -24,55 +27,35 @@ const SearchScreen = ({ userId }) => {
         }
     };
 
-    // Handle user typing in the search bar
     const handleSearch = (event) => {
         const searchQuery = event.target.value;
         setQuery(searchQuery);
 
-        // Fetch results as the user types
         if (searchQuery) {
             fetchSearchResults(searchQuery);
         } else {
-            setResults([]);  // Clear results if the search query is empty
+            setResults([]);
         }
     };
 
-    // Handle click on a search result
     const handleResultClick = (fundId) => {
-        // Navigate to the fund details page, passing fund_id and user_id as state
-        navigate(`/fund`, { state: { fundId, uid } });
+        navigate(`/fund`, { state: { fundId, uid: userId } });
     };
 
+    if (!userId) return null;
+
     return (
-        <div>
-            {/* Navigation Bar */}
-            <nav>
-                <ul>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="/search">Search</a></li>
-                </ul>
-            </nav>
-
-            {/* Search Bar */}
-            <input
-                type="text"
-                placeholder="Search Funds..."
-                value={query}
-                onChange={handleSearch}
-            />
-
-            {/* Display Search Results */}
-            <div>
-                {results.length > 0 && (
-                    <ul>
-                        {results.map(([fundId, fundName]) => (
-                            <li key={fundId} onClick={() => handleResultClick(fundId)}>
-                                {fundName}
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
+        <div className="min-h-screen bg-gray-100">
+            <Sidebar userId={userId} />
+            <main className="ml-64 p-8">
+                <div className="max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold text-gray-800 mb-8">Search Funds</h1>
+                    <SearchBar query={query} onChange={handleSearch} />
+                    {results.length > 0 && (
+                        <SearchResults results={results} onResultClick={handleResultClick} />
+                    )}
+                </div>
+            </main>
         </div>
     );
 };
