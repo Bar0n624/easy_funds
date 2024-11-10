@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import HomeDisplay from './HomeDisplay';
+import '../styles/styles.css'; // Make sure to import the CSS file for styling
 
 export default function Home() {
     const [data, setData] = useState(null);
@@ -37,15 +39,31 @@ export default function Home() {
     }, [user_id, navigate]);
 
     return (
-        <div className="home">
-            <h1>Home Screen</h1>
-            {loading ? (
-                <p>Loading...</p>
-            ) : error ? (
-                <p>{error}</p>
-            ) : (
-                <pre>{JSON.stringify(data, null, 2)}</pre>
-            )}
+        <div className="home-container">
+            {/* Sidebar menu */}
+            <div className="sidebar">
+                <h2>Menu</h2>
+                <ul>
+                    <li><Link to="/search" state={{ uid: user_id }}>Search Screen</Link></li>
+                    <li><Link to="/all-categories" state={{ uid: user_id }}>All Categories</Link></li>
+                    <li><Link to="/all-companies" state={{ uid: user_id }}>All Companies</Link></li>
+                    <li><Link to="/all-funds" state={{ uid: user_id }}>All Funds</Link></li>
+                    <li><Link to="/watchlist" state={{ uid: user_id }}>Watchlist</Link></li>
+                    <li><Link to="/portfolio" state={{ uid: user_id }}>Portfolio</Link></li>
+                </ul>
+            </div>
+
+            {/* Main content area */}
+            <div className="main-content">
+                <h1>Home Screen</h1>
+                {loading ? (
+                    <p>Loading...</p>
+                ) : error ? (
+                    <p>{error}</p>
+                ) : (
+                    data && <HomeDisplay data={data} />
+                )}
+            </div>
         </div>
     );
 }

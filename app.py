@@ -279,7 +279,7 @@ def load_search_fund():
             "FROM fund_name "
             "JOIN fund ON fund_name.fund_id = fund.fund_id "
             "WHERE fund_name.fund_name LIKE %s "
-            "ORDER BY fund.fund_rank;",
+            "ORDER BY fund.fund_rank limit 15;",
             (search_fmt,),
         )
         rec = cur.fetchall()
