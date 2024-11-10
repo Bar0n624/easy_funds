@@ -1,5 +1,5 @@
-import React, {useEffect, useState} from 'react';
-import {useLocation, useNavigate} from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import SideBar from '../components/SideBar';
 
@@ -42,7 +42,7 @@ const TopFundsScreen = () => {
     };
 
     const handleFundClick = (fundId) => {
-        navigate('/fund', {state: {fundId, uid}});
+        navigate('/fund', { state: { fundId, uid } });
     };
 
     const sortedData = [...data].sort((a, b) => {
@@ -51,7 +51,7 @@ const TopFundsScreen = () => {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <SideBar uid={uid}/>
+            <SideBar uid={uid} />
             <main className="ml-64 p-8">
                 <div className="max-w-7xl mx-auto">
                     <h1 className="text-4xl font-bold text-gray-800 mb-4 p-3 text-center">Top Funds</h1>
@@ -78,23 +78,25 @@ const TopFundsScreen = () => {
                                     key={fund[0]}
                                     className="px-12 py-4 bg-white rounded-lg shadow hover:shadow-lg hover:bg-gray-300 cursor-pointer transition-all duration-300 ease-in-out hover:translate-y-[-4px] hover:scale-105 flex justify-between"
                                     onClick={() => handleFundClick(fund[0])}
+                                    style={{ height: '80px' }}
                                 >
-                                    <div className="flex flex-col">
-    <span className="text-left text-xl font-semibold">
-        {fund[2]}
-    </span>
-                                        <span className="text-gray-400 text-sm">
-        {fund[1]}
-    </span>
+                                    <div className="flex flex-col" style={{ maxWidth: '80%' }}>
+                                        <span className="text-left text-xl font-semibold truncate" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {fund[2]}
+                                        </span>
+                                        <span className="text-gray-400 text-sm truncate" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {fund[1]}
+                                        </span>
                                     </div>
                                     <span
                                         className={`text-right font-bold text-lg ${
-                                            fund.performance.toFixed(2) > 0 ? "text-green-500" : "text-red-500"
+                                            fund.performance > 0 ? "text-green-500" : "text-red-500"
                                         }`}
+                                        style={{ maxWidth: '20%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                                     >
-                            {fund.performance.toFixed(2)}%
-                            <span className="text-gray-400 text-sm">{" 1Y"}</span>
-                        </span>
+                                        {fund.performance > 0 ? `+${fund.performance.toFixed(2)}` : fund.performance.toFixed(2)}%
+                                        <span className="text-gray-400 text-sm">{" 1Y"}</span>
+                                    </span>
                                 </li>
                             ))}
                         </div>
