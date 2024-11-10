@@ -601,6 +601,98 @@ def add_many_watchlist():
     return jsonify({"message": "Added multiple items to watchlist"}), ERR_SUCCESS_NEW
 
 
+"""Add to portfolio
+"""
+
+@app.route("/portfolio/add", methods=["POST"])
+def add_portfolio():
+    data = request.get_json()
+    if "user_id" not in data or "fund_id" not in data or "bought_on" not in data or "bought_for" not in data or "invested_amount" not in data:
+        return jsonify({"error": "User ID, Fund ID, Bought On Date, Bought For amount and Amount invested required"}), ERR_INVALID
+    user_id = data["user_id"]
+    fund_id = data["fund_id"]
+    bought_on = data["bought_on"]
+    bought_for = data["bought_for"]
+    invested_amount = data["invested_amount"]
+    sold_on = data.get("sold_on", None)
+    sold_for = data.get("sold_for", None)
+    return_amount = data.get("return_amount", None)
+    cur = MYSQL_CONN.cursor()
+    try:
+        cur.execute(
+            """INSERT INTO portfolio (user_id, fund_id, bought_on, bought_for, invested_amount, sold_on, sold_for, return_amount)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+            (user_id, fund_id, bought_on, bought_for, invested_amount, sold_on, sold_for, return_amount),
+        )
+        MYSQL_CONN.commit()
+    except Error as e:
+        print(e)
+        return jsonify({"message": "Error adding to portfolio"}), ERR_INVALID
+    cur.close()
+    return jsonify({"message": "Added to portfolio"}), ERR_SUCCESS_NEW
+
+
+"""Update sell information in portfolio
+"""
+
+@app.route("/portfolio/update", methods=["POST"])
+def add_portfolio():
+    data = request.get_json()
+    if "user_id" not in data or "fund_id" not in data or "bought_on" not in data:
+        return jsonify({"error": "User ID, Fund ID and Bought On Date required"}), ERR_INVALID
+    user_id = data["user_id"]
+    fund_id = data["fund_id"]
+    bought_on = data["bought_on"]
+    sold_on = data.get("sold_on", None)
+    sold_for = data.get("sold_for", None)
+    return_amount = data.get("return_amount", None)
+    cur = MYSQL_CONN.cursor()
+    try:
+        cur.execute(
+            """UPDATE portfolio SET sold_on=%s, sold_for=%s, return_amount=%s
+               WHERE user_id=%s AND fund_id=%s AND bought_on=%s""",
+            (sold_on, sold_for, return_amount, user_id, fund_id, bought_on),
+        )
+        MYSQL_CONN.commit()
+    except Error as e:
+        print(e)
+        return jsonify({"message": "Error updating portfolio"}), ERR_INVALID
+    cur.close()
+    return jsonify({"message": "Updated portfolio"}), ERR_SUCCESS_NEW
+
+
+"""List all portfolio items of user
+"""
+
+@app.route("/portfolio/list", methods=["POST"])
+def add_portfolio():
+    data = request.get_json()
+    if "user_id" not in data:
+        return jsonify({"error": "User ID required"}), ERR_INVALID
+    user_id = data["user_id"]
+    cur = MYSQL_CONN.cursor()
+    try:
+        cur.execute(
+            """SELECT fund_id as fid, fund_name as fname, bought_on, bought_for, invested_amount, sold_on, sold_for, return_amount, value
+                FROM portfolio, fund where portfolio.fund_id = fund.fund_id AND portfolio.user_id = %s
+                ORDER BY invested_amount DESC
+            """
+            (user_id,),
+        )
+        rec = cur.fetchall()
+        res["results"] = [[r["fid"], r["fname"], r["bought_on"], r["bought_for"], r["invested_amount"], r["sold_on"], r["sold_for"],
+                           r["return_amount"], r["value"]] for r in rec]
+    except Error as e:
+        print(e)
+        return jsonify({"message": "Error fetching portfolio"}), ERR_INVALID
+    cur.close()
+    return jsonify(res), ERR_SUCCESS
+
+
+
+
+
+
 # """List all funds
 # """
 
