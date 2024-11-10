@@ -14,7 +14,6 @@ export default function FundScreen() {
     const location = useLocation();
     const navigate = useNavigate();
     const { fundId, uid } = location.state;
-    console.log(location.state);
 
     useEffect(() => {
         if (!uid || !fundId) {
@@ -69,7 +68,7 @@ export default function FundScreen() {
                     ) : (
                         fundData && (
                             <div>
-                                <FundInfo info={fundData.info} />
+                                <FundInfo info={fundData.info} uid={uid}/>
                                 <FundGraph graphData={graphData} />
                                 <FundList title="Other Funds in Same Category" funds={fundData.same_category} onFundClick={handleFundClick} />
                                 <FundList title="Other Funds in Same Company" funds={fundData.same_company} onFundClick={handleFundClick} />
