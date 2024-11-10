@@ -550,7 +550,7 @@ def add_many_watchlist():
         return jsonify({"message": "Error adding items to watchlist"}), ERR_INVALID
     finally:
         cur.close()
-        conn.close
+        conn.close()
     return jsonify({"message": "Added multiple items to watchlist"}), ERR_SUCCESS_NEW
 
 
