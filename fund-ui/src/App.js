@@ -12,6 +12,7 @@ import AllFunds from "./screens/AllFunds";
 import FundScreen from "./screens/FundScreen";
 import CategoryScreen from "./screens/CategoryScreen";
 import CompanyScreen from "./screens/CompanyScreen";
+import TopFundsScreen from "./screens/TopFundsScreen";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path="/fund" element={<FundScreen />} />
             <Route path="/category" element={<CategoryScreen />} />
             <Route path="/company" element={<CompanyScreen />} />
+            <Route path="/top-funds" element={<TopFundsScreen />} />
         </Routes>
       </Router>
   );

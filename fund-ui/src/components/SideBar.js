@@ -8,6 +8,7 @@ const Sidebar= ({ uid }) => {
 
     const menuItems = [
         { path: '/search', label: 'Search Screen' },
+        { path: '/top-funds' , label: 'Top Funds' },
         { path: '/all-categories', label: 'All Categories' },
         { path: '/all-companies', label: 'All Companies' },
         { path: '/all-funds', label: 'All Funds' },

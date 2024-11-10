@@ -686,6 +686,36 @@ def list_portfolio():
     return jsonify(res), ERR_SUCCESS
 
 
+"""return top funds of a category
+"""
+
+
+@app.route("/top/fund", methods=["GET"])
+def top_fund():
+    res = {}
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
+    try:
+        cur.execute(
+            "SELECT fund_company.company_name AS cname, fund_name.fund_name AS fname, fund.fund_id AS fid,"
+            "fund.one_year as one_year FROM fund_name "
+            "JOIN fund_company ON fund_name.company_id = fund_company.company_id "
+            "JOIN fund ON fund_name.fund_id = fund.fund_id "
+            "ORDER BY fund.fund_rank;"
+        )
+        rec = cur.fetchall()
+        res["results"] = [
+            [r["fid"], r["cname"], r["fname"], r["one_year"]] for r in rec
+        ]
+    except Error as e:
+        print(e)
+        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify(res), ERR_SUCCESS
+
+
 # """List all funds
 # """
 
