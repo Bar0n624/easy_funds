@@ -41,14 +41,17 @@ def add_user():
         cur.execute("SELECT user_id FROM user WHERE user_name = %s", (user_name,))
         user_id = cur.fetchone()[0]
     except Error as e:
+        # This has likely happened due to constraint violation, return an ERR_INVALID
         print(e)
-        return jsonify({"message": "Error registering user"}), ERR_INVALID
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Error registering user"}), ERR_INVALID
     finally:
         cur.close()
         conn.close()
-    return jsonify(
-        {"message": "User registered successfully", "user_id": user_id}
-    ), ERR_SUCCESS_NEW
+        return jsonify(
+            {"message": "User registered successfully", "user_id": user_id}
+        ), ERR_SUCCESS_NEW
 
 
 # User login
@@ -71,6 +74,8 @@ def verify_user():
         rec = cur.fetchone()
     except Error as e:
         print(e)
+        cur.close()
+        conn.close()
         return jsonify({"error": "Database query error"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
@@ -114,25 +119,15 @@ def load_home():
         res["six_month"] = Query(cur, "six_month")
         res["three_month"] = Query(cur, "three_month")
         res["one_month"] = Query(cur, "one_month")
-
-        cur.execute(
-            "SELECT fund_name.fund_id as fid, fund_name.fund_name as fname, "
-            "fund.lifetime as lifetime, fund.one_day as one_day FROM fund_name "
-            "JOIN watchlist ON (fund_name.fund_id = watchlist.fund_id AND watchlist.user_id = %s) "
-            "JOIN fund ON fund_name.fund_id = fund.fund_id ORDER BY fund.fund_rank;",
-            (user_id,),
-        )
-        rec = cur.fetchall()
-        res["watchlist"] = [
-            [r["fid"], r["fname"], r["lifetime"], r["one_day"]] for r in rec
-        ]
     except Error as e:
         print(f"Database error: {e}")
+        cur.close()
+        conn.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
-    return jsonify(res), ERR_SUCCESS
+        return jsonify(res), ERR_SUCCESS
 
 
 """Fund information
@@ -205,11 +200,12 @@ def load_fund():
     except Error as e:
         print(e)
         cur.close()
+        conn.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
-    return jsonify(res), ERR_SUCCESS
+        return jsonify(res), ERR_SUCCESS
 
 
 """Graph data
@@ -244,12 +240,13 @@ def load_fund_graph_data():
     except Error as e:
         print(e)
         cur.close()
+        conn.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
-    return jsonify(res), ERR_SUCCESS
-
+        return jsonify(res), ERR_SUCCESS
+    
 
 """Search by fund name
 
@@ -287,11 +284,12 @@ def load_search_fund():
     except Error as e:
         print(e)
         cur.close()
+        conn.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
-    return jsonify(res), ERR_SUCCESS
+        return jsonify(res), ERR_SUCCESS
 
 
 """Get all funds
@@ -316,11 +314,12 @@ def load_all_fund():
     except Error as e:
         print(e)
         cur.close()
+        conn.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
-    return jsonify(res), ERR_SUCCESS
+        return jsonify(res), ERR_SUCCESS
 
 
 """Get all fund companies
@@ -346,11 +345,12 @@ def load_all_company():
     except Error as e:
         print(e)
         cur.close()
+        conn.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
-    return jsonify(res), ERR_SUCCESS
+        return jsonify(res), ERR_SUCCESS
 
 
 """Get all fund categories
@@ -376,11 +376,12 @@ def load_all_category():
     except Error as e:
         print(e)
         cur.close()
+        conn.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
-    return jsonify(res), ERR_SUCCESS
+        return jsonify(res), ERR_SUCCESS
 
 
 """Search funds by fund company
@@ -431,11 +432,12 @@ def load_search_company():
     except Error as e:
         print(e)
         cur.close()
+        conn.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
-    return jsonify(res), ERR_SUCCESS
+        return jsonify(res), ERR_SUCCESS
 
 
 """Search funds by fund category
@@ -486,11 +488,50 @@ def load_search_category():
     except Error as e:
         print(e)
         cur.close()
+        conn.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
-    return jsonify(res), ERR_SUCCESS
+        return jsonify(res), ERR_SUCCESS
+
+
+"""Get all watchlist items
+"""
+
+
+@app.route("/watchlist/list", methods=["POST"])
+def watchlist_list():
+    data = request.get_json()
+    if "user_id" not in data:
+        return jsonify({"error": "User ID is required"}), ERR_INVALID
+
+    user_id = data["user_id"]
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
+    res = {}
+    try:
+        cur.execute(
+            "SELECT fund_name.fund_id AS fid, fund_name.fund_name AS fname, "
+            "ROUND(fund.one_year, 2) AS one_year, ROUND(fund.one_day, 2) AS one_day "
+            "FROM fund_name "
+            "JOIN fund ON fund_name.fund_id = fund.fund_id "
+            "JOIN watchlist ON watchlist.fund_id = fund_name.fund_id "
+            "WHERE watchlist.user_id = %s "
+            "ORDER BY fund.fund_rank;",
+            (user_id, )
+        )
+        rec = cur.fetchall()
+        res['results'] = [[r['fid'], r['fname'], r['one_year'], r['one_day']] for r in rec]
+    except Error as e:
+        print(e)
+        cur.close()
+        conn.close()
+        return jsonify({"error" : "Error fetching watchlist"}),  ERR_INTERNAL_ALL
+    finally:
+        cur.close()
+        conn.close()
+        return jsonify(res), ERR_SUCCESS
 
 
 """Add one item to watchlist
@@ -514,11 +555,13 @@ def add_watchlist():
         conn.commit()
     except Error as e:
         print(e)
-        return jsonify({"message": "Error adding to watchlist"}), ERR_INVALID
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Error adding to watchlist"}), ERR_INVALID
     finally:
         cur.close()
         conn.close()
-    return jsonify({"message": "Added to watchlist"}), ERR_SUCCESS_NEW
+        return jsonify({"message": "Added to watchlist"}), ERR_SUCCESS_NEW
 
 
 """Add many items to watchlist
@@ -547,11 +590,13 @@ def add_many_watchlist():
         conn.commit()
     except Error as e:
         print(e)
-        return jsonify({"message": "Error adding items to watchlist"}), ERR_INVALID
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Error adding items to watchlist"}), ERR_INVALID
     finally:
         cur.close()
         conn.close()
-    return jsonify({"message": "Added multiple items to watchlist"}), ERR_SUCCESS_NEW
+        return jsonify({"message": "Added multiple items to watchlist"}), ERR_SUCCESS_NEW
 
 
 """Add to portfolio
@@ -601,11 +646,13 @@ def add_portfolio():
         conn.commit()
     except Error as e:
         print(e)
-        return jsonify({"message": "Error adding to portfolio"}), ERR_INVALID
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Error adding to portfolio"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
-    return jsonify({"message": "Added to portfolio"}), ERR_SUCCESS_NEW
+        return jsonify({"message": "Added to portfolio"}), ERR_SUCCESS_NEW
 
 
 """Update sell information in portfolio
@@ -636,9 +683,13 @@ def update_portfolio():
         conn.commit()
     except Error as e:
         print(e)
-        return jsonify({"message": "Error updating portfolio"}), ERR_INVALID
-    cur.close()
-    return jsonify({"message": "Updated portfolio"}), ERR_SUCCESS_NEW
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Error updating portfolio"}), ERR_INTERNAL_ALL
+    finally:
+        cur.close()
+        conn.close()
+        return jsonify({"message": "Updated portfolio"}), ERR_SUCCESS_NEW
 
 
 """List all portfolio items of user
@@ -679,11 +730,13 @@ def list_portfolio():
         ]
     except Error as e:
         print(e)
-        return jsonify({"message": "Error fetching portfolio"}), ERR_INVALID
+        cur.close()
+        conn.close()
+        return jsonify({"message": "Error fetching portfolio"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
-    return jsonify(res), ERR_SUCCESS
+        return jsonify(res), ERR_SUCCESS
 
 
 """return top funds of a category
@@ -709,122 +762,13 @@ def top_fund():
         ]
     except Error as e:
         print(e)
+        cur.close()
+        conn.close()
         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
-    return jsonify(res), ERR_SUCCESS
-
-
-# """List all funds
-# """
-
-
-# @app.route("/search", methods=["GET"])
-# def search():
-#     cur = MYSQL_CONN.cursor(dictionary=True)
-#     cur.execute("SELECT fund_id, fund_name FROM fund_name;")
-#     rec = cur.fetchall()
-#     cur.close()
-#     return jsonify(rec), ERR_SUCCESS
-
-
-# """List all companies
-# """
-
-
-# @app.route("/list_companies", methods=["GET"])
-# def list_companies():
-#     cur = MYSQL_CONN.cursor(dictionary=True)
-#     cur.execute("SELECT company_id, company_name FROM fund_company;")
-#     rec = cur.fetchall()
-#     cur.close()
-#     return jsonify(rec), ERR_SUCCESS
-
-
-# """List all categories
-# """
-
-
-# @app.route("/list_categories", methods=["GET"])
-# def list_categories():
-#     cur = MYSQL_CONN.cursor(dictionary=True)
-#     cur.execute("SELECT category_id, category_name FROM fund_category;")
-#     rec = cur.fetchall()
-#     cur.close()
-#     return jsonify(rec), ERR_SUCCESS
-
-
-# @app.route("/category_top", methods=["GET"])
-# def category_top():
-#     category_id = request.args.get("category_id")
-#     if not category_id:
-#         return jsonify({"error": "Category ID required"}), ERR_INVALID
-#     res = {}
-#     cur = MYSQL_CONN.cursor(dictionary=True)
-#     try:
-#         cur.execute(
-#             "SELECT * from fund where category_id = %s ORDER BY fund_category_rank DESC LIMIT 5;"
-#         )
-#         rec = cur.fetchall()
-#         return jsonify(rec), ERR_SUCCESS
-#     except Error as e:
-#         print(e)
-#         cur.close()
-#         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-
-
-# """List all funds of a category
-# """
-
-
-# @app.route("/fund_category", methods=["GET"])
-# def fund_category():
-#     category_id = request.args.get("category_id")
-#     if not category_id:
-#         return jsonify({"error": "Category ID required"}), ERR_INVALID
-#     res = {}
-#     cur = MYSQL_CONN.cursor(dictionary=True)
-#     try:
-#         cur.execute(
-#             "SELECT fund_name.fund_id, fund_name.fund_name, fund_category.category_name from fund_name "
-#             "JOIN fund_category ON fund_name.category_id = fund_category.category_id "
-#             "WHERE fund_category.category_id = %s;",
-#             (category_id,),
-#         )
-#         rec = cur.fetchall()
-#         return jsonify(rec), ERR_SUCCESS
-#     except Error as e:
-#         print(e)
-#         cur.close()
-#         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-
-
-# """List all funds of a company
-# """
-
-
-# @app.route("/fund_company", methods=["GET"])
-# def fund_company():
-#     company_id = request.args.get("company_id")
-#     if not company_id:
-#         return jsonify({"error": "Company ID required"}), ERR_INVALID
-#     res = {}
-#     cur = MYSQL_CONN.cursor(dictionary=True)
-#     try:
-#         cur.execute(
-#             "SELECT fund_name.fund_id, fund_name.fund_name, fund_company.company_name from fund_name "
-#             "JOIN fund_company ON fund_name.company_id = fund_company.company_id "
-#             "WHERE fund_company.company_id = %s;",
-#             (company_id,),
-#         )
-#         rec = cur.fetchall()
-#         return jsonify(rec), ERR_SUCCESS
-#     except Error as e:
-#         print(e)
-#         cur.close()
-#         return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
-
+        return jsonify(res), ERR_SUCCESS
 
 if __name__ == "__main__":
     mysql_connect()
