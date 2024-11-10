@@ -12,14 +12,12 @@ const FundList = ({ title, funds, onFundClick }) => {
             className="px-8 py-4 bg-white rounded-lg shadow hover:shadow-lg hover:bg-gray-300 cursor-pointer transition-all duration-300 ease-in-out hover:translate-y-[-4px] hover:scale-105 flex justify-between"
           >
             <span className="font-bold">{name}</span>
-            <span
-              className={`text-right font-bold ${
-                value > 0 ? "text-green-500" : "text-red-500"
-              }`}
-            >
-              {value}
-              {"%"}
-              <span className="text-gray-400 text-sm">{" 1Y"}</span>
+                <span
+                className="text-right font-bold"
+                style={{ color: value > 0 ? 'rgb(0, 178, 135)' : 'rgb(240, 125, 100)' }}
+                >
+                    {value}{"%"}
+                <span className="text-gray-400 text-sm">{" 1Y"}</span>
             </span>
           </li>
         ))}
