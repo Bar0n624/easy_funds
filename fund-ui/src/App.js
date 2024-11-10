@@ -10,6 +10,8 @@ import './styles/styles.css'
 import AllCompanies from "./screens/AllCompanies";
 import AllFunds from "./screens/AllFunds";
 import FundScreen from "./screens/FundScreen";
+import CategoryScreen from "./screens/CategoryScreen";
+import CompanyScreen from "./screens/CompanyScreen";
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
             <Route path="/all-companies" element={<AllCompanies />} />
             <Route path="/all-funds" element={<AllFunds />} />
             <Route path="/fund" element={<FundScreen />} />
+            <Route path="/category" element={<CategoryScreen />} />
+            <Route path="/company" element={<CompanyScreen />} />
         </Routes>
       </Router>
   );
