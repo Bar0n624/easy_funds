@@ -138,7 +138,7 @@ def load_home():
         cur.execute(
             "SELECT fund_name.fund_id as fid, fund_name.fund_name as fname, fund.lifetime as lifetime, fund.one_day as one_day FROM fund_name "
             f"JOIN watchlist ON (fund_name.fund_id = watchlist.fund_id AND watchlist.user_id = {user_id}) "
-            "JOIN fund ON fund_name.fund_id = fund.fund_id;"
+            "JOIN fund ON fund_name.fund_id = fund.fund_id ORDER BY fund.fund_rank;"
         )
         rec = cur.fetchall()
         res["watchlist"] = [
@@ -202,7 +202,7 @@ def load_fund():
             "SELECT fund_name.fund_id AS fid, fund_name.fund_name AS fname, ROUND(fund.one_year, 2) AS one_year "
             "FROM fund_name JOIN fund ON fund_name.fund_id = fund.fund_id "
             "WHERE fund_name.company_id = %s AND fund_name.fund_id != %s "
-            "ORDER BY fund.one_year DESC LIMIT 5;",
+            "ORDER BY fund.fund_rank LIMIT 5;",
             (ids["company_id"], fund_id),
         )
         rec = cur.fetchall()
@@ -213,7 +213,7 @@ def load_fund():
             "SELECT fund_name.fund_id AS fid, fund_name.fund_name AS fname, ROUND(fund.one_year, 2) AS one_year "
             "FROM fund_name JOIN fund ON fund_name.fund_id = fund.fund_id "
             "WHERE fund_name.category_id = %s AND fund_name.fund_id != %s "
-            "ORDER BY fund.one_year DESC LIMIT 5;",
+            "ORDER BY fund.fund_category_rank LIMIT 5;",
             (ids["category_id"], fund_id),
         )
         rec = cur.fetchall()
@@ -289,7 +289,7 @@ def load_search_fund():
             "FROM fund_name "
             "JOIN fund ON fund_name.fund_id = fund.fund_id "
             "WHERE fund_name.fund_name LIKE %s "
-            "ORDER BY fund.one_year DESC;",
+            "ORDER BY fund.fund_rank;",
             (search_fmt,),
         )
         rec = cur.fetchall()
@@ -402,7 +402,7 @@ def load_top_company():
             "FROM fund_company "
             "JOIN fund_name ON fund_company.company_id = fund_name.company_id "
             "JOIN fund ON fund_name.fund_id = fund.fund_id "
-            "ORDER BY fund.one_year DESC limit 5;"
+            "ORDER BY fund.fund_rank limit 5;"
         )
         rec = cur.fetchall()
         res["result"] = [[r["c_id"], r["c_name"], r["one_year"]] for r in rec]
@@ -433,7 +433,7 @@ def load_top_category():
             "FROM fund_category "
             "JOIN fund_name ON fund_category.category_id = fund_name.category_id "
             "JOIN fund ON fund_name.fund_id = fund.fund_id "
-            "ORDER BY fund.one_year DESC limit 5;"
+            "ORDER BY fund.fund_category_rank limit 5;"
         )
         rec = cur.fetchall()
         res["result"] = [[r["c_id"], r["c_name"], r["one_year"]] for r in rec]
@@ -484,7 +484,7 @@ def load_search_company():
             "JOIN fund_company ON fund_name.company_id = fund_company.company_id "
             "JOIN fund ON fund_name.fund_id = fund.fund_id "
             "WHERE fund_company.company_id = %s "
-            "ORDER BY fund.one_year DESC;",
+            "ORDER BY fund.fund_rank;",
             (c_id,),
         )
         rec = cur.fetchall()
@@ -536,7 +536,7 @@ def load_search_category():
             "JOIN fund_category ON fund_name.category_id = fund_category.category_id "
             "JOIN fund ON fund_name.fund_id = fund.fund_id "
             "WHERE fund_category.category_id = %s "
-            "ORDER BY fund.one_year DESC;",
+            "ORDER BY fund.fund_category_rank DESC;",
             (c_id,),
         )
         rec = cur.fetchall()
