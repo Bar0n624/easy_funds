@@ -52,6 +52,7 @@ export default function FundScreen() {
   }, [fundId, uid, navigate]);
 
   const handleFundClick = (fundId) => {
+    window.scrollTo(0, 0);
     navigate("/fund", { state: { fundId, uid } });
   };
 
