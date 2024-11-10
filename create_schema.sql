@@ -375,6 +375,42 @@ BEGIN
     CLOSE cur;
 END //
 
+CREATE PROCEDURE update_all_fund_prices()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE current_fund_id INT;
+    DECLARE latest_price DOUBLE;
+
+    DECLARE cur CURSOR FOR SELECT fund_id FROM fund;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    OPEN cur;
+
+    fund_loop: LOOP
+        FETCH cur INTO current_fund_id;
+        
+        IF done THEN
+            LEAVE fund_loop;
+        END IF;
+
+        SELECT price INTO latest_price
+        FROM fund_value
+        WHERE fund_id = current_fund_id
+        ORDER BY date DESC
+        LIMIT 1;
+
+        IF latest_price IS NOT NULL THEN
+            UPDATE fund
+            SET value = latest_price
+            WHERE fund_id = current_fund_id;
+        END IF;
+    END LOOP;
+
+    CLOSE cur;
+END;
+
+
 DELIMITER ;
 
 
