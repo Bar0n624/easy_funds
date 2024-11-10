@@ -22,7 +22,7 @@ function App() {
             <Route path="/all-categories" element={<AllCategories />} />
             <Route path="/all-companies" element={<AllCompanies />} />
             <Route path="/all-funds" element={<AllFunds />} />
-            <Route path="/fund" elemen={<FundScreen />} />
+            <Route path="/fund" element={<FundScreen />} />
         </Routes>
       </Router>
   );

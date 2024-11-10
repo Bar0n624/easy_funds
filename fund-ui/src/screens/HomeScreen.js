@@ -40,7 +40,7 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <Sidebar userId={user_id}/>
+            <Sidebar uid={user_id}/>
             <main className="ml-64 p-8">
                 <div className="max-w-7xl mx-auto">
                     {loading ? (

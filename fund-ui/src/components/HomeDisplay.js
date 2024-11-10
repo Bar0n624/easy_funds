@@ -12,7 +12,7 @@ const HomeDisplay = ({ data }) => {
     };
 
     const handleFundClick = (fundId) => {
-        const uid = new URLSearchParams(window.location.search).get('u_id');
+        const uid = new URLSearchParams(window.location.search).get('uid');
         navigate('/fund', { state: { fundId, uid } });
     };
 

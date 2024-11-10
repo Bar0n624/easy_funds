@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 
-const Sidebar= ({ userId }) => {
+const Sidebar= ({ uid }) => {
     const location = useLocation();
     const currentPath = location.pathname;
 
@@ -19,7 +19,7 @@ const Sidebar= ({ userId }) => {
         <div className="w-64 h-screen bg-gray-800 text-white fixed left-0 top-0 p-6">
             <Link
                 to="/home"
-                state={{ uid: userId }}
+                state={{ uid: uid }}
                 className="block mb-8"
             >
                 <h2 className="text-2xl font-bold hover:text-blue-400 transition-colors">Easy Funds</h2>
@@ -29,7 +29,7 @@ const Sidebar= ({ userId }) => {
                     <li key={item.path}>
                         <Link
                             to={item.path}
-                            state={{ uid: userId }}
+                            state={{ uid: uid }}
                             className={`block py-2 px-4 rounded transition-colors ${
                                 currentPath === item.path
                                     ? 'bg-blue-600 text-white'

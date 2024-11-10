@@ -45,7 +45,7 @@ export default function AllCategories() {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <Sidebar userId={user_id}/>
+            <Sidebar uid={user_id}/>
             <main className="ml-64 p-8">
                 <div className="max-w-7xl mx-auto">
                     <h1 className="text-4xl font-bold text-gray-800 mb-4 p-3">All Categories</h1>
@@ -67,7 +67,7 @@ export default function AllCategories() {
                             {error}
                         </div>
                     ) : (
-                        data && <CategoryDisplay data={{ results: filteredCategories }} userId={user_id}/>
+                        data && <CategoryDisplay data={{ results: filteredCategories }} uid={user_id}/>
                     )}
                 </div>
             </main>

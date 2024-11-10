@@ -10,13 +10,13 @@ const SearchScreen= () => {
     const [results, setResults] = useState([]);
     const location = useLocation();
     const navigate = useNavigate();
-    const userId = location.state?.uid;
+    const uid = location.state?.uid;
 
     useEffect(() => {
-        if (!userId) {
+        if (!uid) {
             navigate('/');
         }
-    }, [userId, navigate]);
+    }, [uid, navigate]);
 
     const fetchSearchResults = async (searchQuery) => {
         try {
@@ -39,14 +39,14 @@ const SearchScreen= () => {
     };
 
     const handleResultClick = (fundId) => {
-        navigate(`/fund`, { state: { fundId, uid: userId } });
+        navigate(`/fund`, { state: { fundId, uid: uid } });
     };
 
-    if (!userId) return null;
+    if (!uid) return null;
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <Sidebar userId={userId} />
+            <Sidebar uid={uid} />
             <main className="ml-64 p-8">
                 <div className="flex flex-col items-center">
                     <h1 className="text-3xl font-bold text-gray-800 mb-8">Search Funds</h1>
