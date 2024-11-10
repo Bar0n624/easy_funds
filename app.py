@@ -33,13 +33,13 @@ def mysql_connect():
 @app.route("/register", methods=["POST"])
 def add_user():
     data = request.get_json()
-
+    print(data)
     if "username" not in data or "password" not in data:
+        print("username pass error")
         return jsonify({"error": "Username and password required"}), ERR_INVALID
 
     user_name = data["username"]
     password = data["password"]
-
     salt = os.urandom(16).hex()  # 16-byte random salt
     password_hash = hashlib.sha256(
         (password + salt).encode()
@@ -55,9 +55,12 @@ def add_user():
     except Error as e:
         print(e)
         return jsonify({"message": "Error registering user"}), ERR_INVALID
+    cur.execute("SELECT user_id FROM user WHERE user_name = %s", (user_name,))
+    user_id = cur.fetchone()[0]
     cur.close()
-
-    return jsonify({"message": "User registered successfully"}), ERR_SUCCESS_NEW
+    return jsonify(
+        {"message": "User registered successfully", "user_id": user_id}
+    ), ERR_SUCCESS_NEW
 
 
 """User login
@@ -584,10 +587,14 @@ def add_many_watchlist():
     if "items" not in data or not isinstance(data["items"], list):
         return jsonify({"error": "Items list is required"}), ERR_INVALID
 
-    items = data["items"]  # This should be a list of dictionaries, each containing 'user_id' and 'fund_id'
+    items = data[
+        "items"
+    ]  # This should be a list of dictionaries, each containing 'user_id' and 'fund_id'
 
     if not all("user_id" in item and "fund_id" in item for item in items):
-        return jsonify({"error": "Each item must contain User ID and Fund ID"}), ERR_INVALID
+        return jsonify(
+            {"error": "Each item must contain User ID and Fund ID"}
+        ), ERR_INVALID
 
     cur = MYSQL_CONN.cursor()
     try:
@@ -604,11 +611,22 @@ def add_many_watchlist():
 """Add to portfolio
 """
 
+
 @app.route("/portfolio/add", methods=["POST"])
 def add_portfolio():
     data = request.get_json()
-    if "user_id" not in data or "fund_id" not in data or "bought_on" not in data or "bought_for" not in data or "invested_amount" not in data:
-        return jsonify({"error": "User ID, Fund ID, Bought On Date, Bought For amount and Amount invested required"}), ERR_INVALID
+    if (
+        "user_id" not in data
+        or "fund_id" not in data
+        or "bought_on" not in data
+        or "bought_for" not in data
+        or "invested_amount" not in data
+    ):
+        return jsonify(
+            {
+                "error": "User ID, Fund ID, Bought On Date, Bought For amount and Amount invested required"
+            }
+        ), ERR_INVALID
     user_id = data["user_id"]
     fund_id = data["fund_id"]
     bought_on = data["bought_on"]
@@ -622,7 +640,16 @@ def add_portfolio():
         cur.execute(
             """INSERT INTO portfolio (user_id, fund_id, bought_on, bought_for, invested_amount, sold_on, sold_for, return_amount)
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
-            (user_id, fund_id, bought_on, bought_for, invested_amount, sold_on, sold_for, return_amount),
+            (
+                user_id,
+                fund_id,
+                bought_on,
+                bought_for,
+                invested_amount,
+                sold_on,
+                sold_for,
+                return_amount,
+            ),
         )
         MYSQL_CONN.commit()
     except Error as e:
@@ -635,11 +662,14 @@ def add_portfolio():
 """Update sell information in portfolio
 """
 
+
 @app.route("/portfolio/update", methods=["POST"])
-def add_portfolio():
+def update_portfolio():
     data = request.get_json()
     if "user_id" not in data or "fund_id" not in data or "bought_on" not in data:
-        return jsonify({"error": "User ID, Fund ID and Bought On Date required"}), ERR_INVALID
+        return jsonify(
+            {"error": "User ID, Fund ID and Bought On Date required"}
+        ), ERR_INVALID
     user_id = data["user_id"]
     fund_id = data["fund_id"]
     bought_on = data["bought_on"]
@@ -664,33 +694,43 @@ def add_portfolio():
 """List all portfolio items of user
 """
 
+
 @app.route("/portfolio/list", methods=["POST"])
-def add_portfolio():
+def list_portfolio():
     data = request.get_json()
     if "user_id" not in data:
         return jsonify({"error": "User ID required"}), ERR_INVALID
     user_id = data["user_id"]
     cur = MYSQL_CONN.cursor()
+    res = {}
     try:
         cur.execute(
             """SELECT fund_id as fid, fund_name as fname, bought_on, bought_for, invested_amount, sold_on, sold_for, return_amount, value
                 FROM portfolio, fund where portfolio.fund_id = fund.fund_id AND portfolio.user_id = %s
                 ORDER BY invested_amount DESC
-            """
+            """,
             (user_id,),
         )
         rec = cur.fetchall()
-        res["results"] = [[r["fid"], r["fname"], r["bought_on"], r["bought_for"], r["invested_amount"], r["sold_on"], r["sold_for"],
-                           r["return_amount"], r["value"]] for r in rec]
+        res["results"] = [
+            [
+                r["fid"],
+                r["fname"],
+                r["bought_on"],
+                r["bought_for"],
+                r["invested_amount"],
+                r["sold_on"],
+                r["sold_for"],
+                r["return_amount"],
+                r["value"],
+            ]
+            for r in rec
+        ]
     except Error as e:
         print(e)
         return jsonify({"message": "Error fetching portfolio"}), ERR_INVALID
     cur.close()
     return jsonify(res), ERR_SUCCESS
-
-
-
-
 
 
 # """List all funds
