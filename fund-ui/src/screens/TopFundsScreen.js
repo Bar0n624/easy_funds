@@ -76,15 +76,14 @@ const TopFundsScreen = () => {
                             {sortedData.map((fund) => (
                                 <li
                                     key={fund[0]}
-                                    className="px-12 py-4 bg-white rounded-lg shadow hover:shadow-lg hover:bg-gray-300 cursor-pointer transition-all duration-300 ease-in-out hover:translate-y-[-4px] hover:scale-105 flex justify-between"
+                                    className="fund-item px-12 py-4 bg-white rounded-lg shadow hover:shadow-lg hover:bg-gray-300 cursor-pointer transition-all duration-300 ease-in-out hover:translate-y-[-4px] hover:scale-105 flex justify-between"
                                     onClick={() => handleFundClick(fund[0])}
-                                    style={{ height: '80px' }}
                                 >
-                                    <div className="flex flex-col" style={{ maxWidth: '80%' }}>
-                                        <span className="text-left text-xl font-semibold truncate" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    <div className="fund-text flex flex-col">
+                                        <span className="fund-inner text-left text-xl font-semibold">
                                             {fund[2]}
                                         </span>
-                                        <span className="text-gray-400 text-sm truncate" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        <span className="text-gray-400 text-sm">
                                             {fund[1]}
                                         </span>
                                     </div>
@@ -92,7 +91,6 @@ const TopFundsScreen = () => {
                                         className={`text-right font-bold text-lg ${
                                             fund.performance > 0 ? "text-green-500" : "text-red-500"
                                         }`}
-                                        style={{ maxWidth: '20%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                                     >
                                         {fund.performance > 0 ? `+${fund.performance.toFixed(2)}` : fund.performance.toFixed(2)}%
                                         <span className="text-gray-400 text-sm">{" 1Y"}</span>

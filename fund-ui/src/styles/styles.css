@@ -1,3 +1,32 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.fund-item {
+    height: 80px;
+    overflow: hidden;
+}
+
+.fund-item:hover {
+    height: auto;
+}
+
+.fund-text {
+    max-width: 80%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.fund-inner {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fund-item:hover .fund-text .fund-inner{
+    overflow: visible;
+    white-space: normal;
+    text-overflow: unset;
+}
+
+

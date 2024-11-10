@@ -27,14 +27,13 @@ const HomeDisplay = ({ data, uid }) => {
                                 <li
                                     key={index}
                                     onClick={() => handleFundClick(fund[0])}
-                                    className="px-12 py-4 bg-white rounded-lg shadow hover:shadow-lg hover:bg-gray-300 cursor-pointer transition-all duration-300 ease-in-out hover:translate-y-[-4px] hover:scale-105 flex justify-between"
-                                    style={{ height: '80px' }}
+                                    className="fund-item px-12 py-4 bg-white rounded-lg shadow hover:shadow-lg hover:bg-gray-300 cursor-pointer transition-all duration-300 ease-in-out hover:translate-y-[-4px] hover:scale-105 flex justify-between"
                                 >
-                                    <div className="flex flex-col" style={{ maxWidth: '80%' }}>
-                                        <span className="text-left text-xl font-semibold truncate" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    <div className="fund-text flex flex-col">
+                                        <span className="fund-inner text-left text-xl font-semibold " >
                                             {fund[2]}
                                         </span>
-                                        <span className="text-gray-400 text-sm truncate" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        <span className="text-gray-400 text-sm truncate" >
                                             {fund[1]}
                                         </span>
                                     </div>
