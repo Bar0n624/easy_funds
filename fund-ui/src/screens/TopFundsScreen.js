@@ -76,13 +76,17 @@ const TopFundsScreen = () => {
                             {sortedData.map((fund) => (
                                 <li
                                     key={fund[0]}
-                                    className="px-12 py-6 bg-white rounded-lg shadow hover:shadow-lg hover:bg-gray-300 cursor-pointer transition-all duration-300 ease-in-out hover:translate-y-[-4px] hover:scale-105 flex justify-between"
+                                    className="px-12 py-4 bg-white rounded-lg shadow hover:shadow-lg hover:bg-gray-300 cursor-pointer transition-all duration-300 ease-in-out hover:translate-y-[-4px] hover:scale-105 flex justify-between"
                                     onClick={() => handleFundClick(fund[0])}
                                 >
-                                    <span className="text-left text-lg font-semibold">
-                                        {fund[2]}
-                                    </span>
-                                    <span className="text-gray-400 text-sm"> {fund[1]}</span>
+                                    <div className="flex flex-col">
+    <span className="text-left text-xl font-semibold">
+        {fund[2]}
+    </span>
+                                        <span className="text-gray-400 text-sm">
+        {fund[1]}
+    </span>
+                                    </div>
                                     <span
                                         className={`text-right font-bold text-lg ${
                                             fund.performance.toFixed(2) > 0 ? "text-green-500" : "text-red-500"
