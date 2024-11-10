@@ -17,6 +17,7 @@ CREATE TABLE portfolio(user_id int, fund_id int, bought_on datetime, bought_for 
 primary key(user_id, fund_id, bought_on) );
 CREATE TABLE watchlist(user_id int, fund_id int, foreign key(user_id) references user(user_id), foreign key(fund_id) references fund_name(fund_id),
 primary key(user_id, fund_id));
+CREATE TABLE auth (user_id INT(11) NOT NULL, token_hash CHAR(64) NOT NULL PRIMARY KEY, created_on DATE NOT NULL);
 
 
 DELIMITER //

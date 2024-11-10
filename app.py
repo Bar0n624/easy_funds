@@ -5,6 +5,7 @@ import hashlib
 import os
 from http_err import *
 from flask_cors import CORS
+from time import time
 
 app = Flask(__name__)
 CORS(app)
@@ -54,6 +55,35 @@ def add_user():
         ), ERR_SUCCESS_NEW
 
 
+"""Generate one-time authentication token
+
+    * Generates an authentication token valid only for
+      the current session.
+    * A new token will be generated and sent back to the
+      on every login.
+"""
+def genAuthToken(user_id):
+    auth = hashlib.sha256((str(time()) + str(user_id) + "bar0n&vb").encode()).hexdigest()
+    conn = mysql_connect()
+    cur = conn.cursor()
+
+    try:
+        # Delete existing token (if exists)
+        cur.execute("DELETE FROM auth WHERE user_id = %s;", (user_id,))
+
+        # Save new auth token
+        cur.execute("INSERT INTO auth (user_id, token_hash, created_on) VALUES (%s, %s, CURDATE());",
+                    (user_id, auth))
+
+        conn.commit()
+    except Error as e:
+        print(e)
+        return None
+    finally:
+        cur.close()
+        conn.close()
+        return auth
+
 # User login
 @app.route("/login", methods=["POST"])
 def verify_user():
@@ -68,14 +98,12 @@ def verify_user():
     cur = conn.cursor(dictionary=True)
     try:
         cur.execute(
-            "SELECT password_hash, salt, user_id FROM user where user_name = %s",
-            (user_name,),
+            "SELECT password_hash, salt, user_id FROM user WHERE user_name = %s",
+            (user_name,)
         )
-        rec = cur.fetchone()
+        rec = cur.fetchone()    
     except Error as e:
         print(e)
-        cur.close()
-        conn.close()
         return jsonify({"error": "Database query error"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
@@ -87,8 +115,13 @@ def verify_user():
         uid = rec["user_id"]
         password_hash = hashlib.sha256((password + salt).encode()).hexdigest()
         if password_hash == expected_hash:
-            return jsonify({"message": "Login successful", "user_id": uid}), ERR_SUCCESS
+            auth = genAuthToken(user_id=uid)
+            if not auth:
+                return jsonify({"error": "Invalid credentials"}), ERR_UNAUTHORIZED
+            else:
+                return jsonify({"message": "Login successful", "user_id": uid, "auth_token": auth}), ERR_SUCCESS
     return jsonify({"error": "Invalid credentials"}), ERR_UNAUTHORIZED
+
 
 
 # Home page
@@ -601,6 +634,33 @@ def add_many_watchlist():
         return jsonify(
             {"message": "Added multiple items to watchlist"}
         ), ERR_SUCCESS_NEW
+
+
+"""Delete an item from watchlist
+"""
+@app.route("/watchlist/deleteone", methods=["POST"])
+def delete_one_watchlist():
+    data = request.get_json()
+    if "user_id" not in data or "fund_id" not in data:
+        return jsonify({"error" : "User ID and Fund ID required"}), ERR_INVALID
+
+    user_id, fund_id = data["user_id"], data["fund_id"]
+
+    conn = mysql_connect()
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM watchlist WHERE user_id = %s AND fund_id = %s;",
+                    (user_id, fund_id))
+        conn.commit()
+    except Error as e:
+        print(e)
+        cur.close()
+        conn.close()
+        return jsonify({"error" : "Failed to process query"}), ERR_INTERNAL_ALL
+    finally:
+        cur.close()
+        conn.close()
+        return jsonify({"message" : "Record dropped successfully"}), ERR_SUCCESS
 
 
 """Add to portfolio

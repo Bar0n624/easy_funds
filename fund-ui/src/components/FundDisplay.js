@@ -17,7 +17,7 @@ const FundDisplay = ({ data, uid }) => {
                         className="bg-white rounded-lg p-6 cursor-pointer shadow hover:shadow-md hover:bg-gray-300 transition-all transition- duration-200 hover:translate-y-[-2px]"
                         onClick={() => handleFundClick(fund[0])}
                     >
-                        <h2 className="text-xl font-semibold text-gray-800">{fund[1]}</h2>
+                        <h2 className="text-l font-bold text-gray-800">{fund[1]}</h2>
                     </div>
                 ))}
             </div>

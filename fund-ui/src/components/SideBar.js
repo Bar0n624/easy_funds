@@ -52,7 +52,7 @@ const SideBar = ({ uid, username }) => {
                 </ul>
             </div>
             <div className="p-6">
-                <p>Logged in as: {username}</p>
+                <p>Logged in as <span className="font-semibold">{username}</span></p>
                 <button
                     onClick={handleSignOut}
                     className="mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center"

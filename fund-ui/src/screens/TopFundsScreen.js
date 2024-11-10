@@ -94,7 +94,7 @@ const TopFundsScreen = () => {
                                         }`}
                                     >
                                         {fund.performance > 0 ? `+${fund.performance.toFixed(2)}` : fund.performance.toFixed(2)}%
-                                        <span className="text-gray-400 text-sm">{" 1Y"}</span>
+                                        <span className="text-gray-400 text-sm pr-2">{" 1Y"}</span>
                                     </span>
                                 </li>
                             ))}

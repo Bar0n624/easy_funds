@@ -9,7 +9,7 @@ const WatchlistScreen = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
   const uid = location.state?.uid;
@@ -29,12 +29,12 @@ const WatchlistScreen = () => {
         );
         setData(response.data);
       } catch (err) {
-        console.error('Error fetching data: ', err);
+        console.error("Error fetching data: ", err);
         setError("Failed to load data. Please try again later");
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     fetchData();
   }, [uid, navigate]);
@@ -43,9 +43,16 @@ const WatchlistScreen = () => {
     setSearchQuery(e.target.value);
   };
 
-  const filteredFunds = data?.results.filter(fund =>
-      fund[1].toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  const filteredFunds = data?.results.filter((fund) =>
+    fund[1].toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleDelete = (fundId) => {
+    setData((prevData) => ({
+      ...prevData,
+      results: prevData.results.filter((fund) => fund[0] !== fundId),
+    }));
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -68,7 +75,9 @@ const WatchlistScreen = () => {
               {error}
             </div>
           ) : (
-            data && <WatchlistItem data={{ results: filteredFunds }} uid={uid} />
+            data && (
+              <WatchlistItem data={{ results: filteredFunds }} uid={uid} onDelete={handleDelete} />
+            )
           )}
         </div>
       </main>
