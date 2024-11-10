@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const CategoryDisplay = ({ data, uid}) => {
+const CategoryDisplay = ({ data, uid }) => {
     const navigate = useNavigate();
 
     const handleFundClick = (fundId) => {
@@ -9,17 +9,24 @@ const CategoryDisplay = ({ data, uid}) => {
     };
 
     return (
-        <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {data.results.map((fund) => (
-                    <div
+                    <li
                         key={fund[0]}
-                        className="bg-white rounded-lg p-6 cursor-pointer shadow hover:shadow-md hover:bg-gray-300 transition-all duration-200"
                         onClick={() => handleFundClick(fund[0])}
+                        className="px-12 py-6 bg-white rounded-lg shadow hover:shadow-lg hover:bg-gray-300 cursor-pointer transition-all duration-300 ease-in-out hover:translate-y-[-4px] hover:scale-105 flex justify-between"
                     >
-                        <h2 className="text-xl font-semibold text-gray-800">{fund[1]}</h2>
-                        <p className="text-gray-700">Performance: {fund[2]}%</p>
-                    </div>
+                        <span className="font-bold text-lg">{fund[1]}</span>
+                        <span
+                            className={`text-right font-bold text-lg ${
+                                fund[2] > 0 ? "text-green-500" : "text-red-500"
+                            }`}
+                        >
+                            {fund[2]}%
+                            <span className="text-gray-400 text-sm">{" 1Y"}</span>
+                        </span>
+                    </li>
                 ))}
             </div>
         </div>
