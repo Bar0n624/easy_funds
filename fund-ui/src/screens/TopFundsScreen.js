@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, {useEffect, useState} from 'react';
+import {useLocation, useNavigate} from 'react-router-dom';
 import axios from 'axios';
 import SideBar from '../components/SideBar';
 
@@ -42,7 +42,7 @@ const TopFundsScreen = () => {
     };
 
     const handleFundClick = (fundId) => {
-        navigate('/fund', { state: { fundId, uid } });
+        navigate('/fund', {state: {fundId, uid}});
     };
 
     const sortedData = [...data].sort((a, b) => {
@@ -51,7 +51,7 @@ const TopFundsScreen = () => {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <SideBar uid={uid} />
+            <SideBar uid={uid}/>
             <main className="ml-64 p-8">
                 <div className="max-w-7xl mx-auto">
                     <h1 className="text-4xl font-bold text-gray-800 mb-4 p-3 text-center">Top Funds</h1>
@@ -74,15 +74,24 @@ const TopFundsScreen = () => {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {sortedData.map((fund) => (
-                                <div
+                                <li
                                     key={fund[0]}
-                                    className="bg-white rounded-lg p-6 shadow hover:shadow-md transition-all duration-200 cursor-pointer"
+                                    className="px-12 py-6 bg-white rounded-lg shadow hover:shadow-lg hover:bg-gray-300 cursor-pointer transition-all duration-300 ease-in-out hover:translate-y-[-4px] hover:scale-105 flex justify-between"
                                     onClick={() => handleFundClick(fund[0])}
                                 >
-                                    <h2 className="text-xl font-semibold text-gray-800">{fund[2]}</h2>
-                                    <p className="text-gray-700">Company: {fund[1]}</p>
-                                    <p className="text-gray-700">Performance: {fund.performance.toFixed(2)}%</p>
-                                </div>
+                                    <span className="text-left text-lg font-semibold">
+                                        {fund[2]}
+                                    </span>
+                                    <span className="text-gray-400 text-sm"> {fund[1]}</span>
+                                    <span
+                                        className={`text-right font-bold text-lg ${
+                                            fund.performance.toFixed(2) > 0 ? "text-green-500" : "text-red-500"
+                                        }`}
+                                    >
+                            {fund.performance.toFixed(2)}%
+                            <span className="text-gray-400 text-sm">{" 1Y"}</span>
+                        </span>
+                                </li>
                             ))}
                         </div>
                     )}

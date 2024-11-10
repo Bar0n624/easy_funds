@@ -1,8 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-
-const HomeDisplay = ({ data, uid}) => {
+const HomeDisplay = ({ data, uid }) => {
     const navigate = useNavigate();
     const periods = {
         one_month: "1 Month",
@@ -11,20 +10,18 @@ const HomeDisplay = ({ data, uid}) => {
         one_year: "1 Year"
     };
 
-    console.log(data);
-
     const handleFundClick = (fundId) => {
         navigate('/fund', { state: { fundId, uid } });
     };
 
     return (
         <div className="space-y-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-8">Top Performing Funds</h1>
+            <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">Top Performing Funds</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {Object.entries(periods).map(([key, label]) => (
-                    <div key={key} className="bg-white rounded-lg shadow-md p-6">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-4">{label}</h2>
+                    <div key={key} className="bg-white rounded-lg shadow hover:shadow-lg p-6 transition-all duration-200 hover:translate-y-[-2px]">
+                        <h2 className="text-2xl font-semibold text-gray-800 mb-4">{label}</h2>
                         <div className="overflow-x-auto">
                             <table className="min-w-full">
                                 <thead className="bg-gray-50">
@@ -53,8 +50,8 @@ const HomeDisplay = ({ data, uid}) => {
                 ))}
             </div>
 
-            <div className="bg-white rounded-lg shadow-md p-6 mt-8">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Watchlist</h2>
+            <div className="bg-white rounded-lg shadow hover:shadow-lg p-6 transition-all duration-200 hover:translate-y-[-2px] mt-8">
+                <h2 className="text-2xl font-semibold text-gray-800 mb-4">Watchlist</h2>
                 {data.watchlist.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="min-w-full">
