@@ -12,6 +12,7 @@ import FundScreen from "./screens/FundScreen";
 import CategoryScreen from "./screens/CategoryScreen";
 import CompanyScreen from "./screens/CompanyScreen";
 import TopFundsScreen from "./screens/TopFundsScreen";
+import WatchlistScreen from "./screens/WatchlistScreen";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path="/category" element={<CategoryScreen />} />
             <Route path="/company" element={<CompanyScreen />} />
             <Route path="/top-funds" element={<TopFundsScreen />} />
+            <Route path="/watchlist" element={<WatchlistScreen />} />
         </Routes>
       </Router>
   );

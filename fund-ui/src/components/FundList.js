@@ -16,7 +16,7 @@ const FundList = ({ title, funds, onFundClick }) => {
                 className="text-right font-bold"
                 style={{ color: value > 0 ? 'rgb(0, 178, 135)' : 'rgb(240, 125, 100)' }}
                 >
-                    {value}{"%"}
+                    {value > 0 ? "+" : ""}{value}{"%"}
                 <span className="text-gray-400 text-sm">{" 1Y"}</span>
             </span>
           </li>

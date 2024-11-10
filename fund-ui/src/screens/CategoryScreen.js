@@ -27,7 +27,7 @@ const CategoryScreen = () => {
                 const response = await axios.get(`http://localhost:5000/search/category?c_id=${categoryId}`);
                 setData(response.data);
             } catch (error) {
-                console.error('Error fetching data:', error);
+                console.error('Error fetching data: ', error);
                 setError("Failed to load data. Please try again later.");
             } finally {
                 setLoading(false);
