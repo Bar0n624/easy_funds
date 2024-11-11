@@ -79,7 +79,7 @@ def insert_data(data):
             line["value"],
             line["date"],
         )
-
+        name = name.replace("'", "")
         date = datetime.strptime(date.strip(), "%d-%b-%Y")
         date = date.strftime("%Y-%m-%d %H:%M:%S")
 
