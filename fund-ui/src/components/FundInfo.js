@@ -246,9 +246,11 @@ const FundInfo = ({ info, uid, watchlist }) => {
                 />
               </div>
             </div>
-            <div className={`mt-4 ${profitLossColor}`}>
-              <p>Net {netProfitLoss >= 0 ? "Profit" : "Loss"}: ₹{Math.abs(netProfitLoss).toFixed(2)} ({netProfitLossPercentage}%)</p>
-            </div>
+            {boughtFor && soldFor && (
+                <div className={`mt-4 ${profitLossColor}`}>
+                  <p>Net {netProfitLoss >= 0 ? "Profit" : "Loss"}: ₹{Math.abs(netProfitLoss).toFixed(2)} ({netProfitLossPercentage}%)</p>
+                </div>
+            )}
           </div>
           <button
               onClick={addToPortfolio}
