@@ -43,7 +43,7 @@ const TopFundsScreen = () => {
     };
 
     const handleFundClick = (fundId) => {
-        navigate('/fund', { state: { fundId, uid } });
+        navigate('/fund', { state: { fundId, uid , name} });
     };
 
     const sortedData = [...data].sort((a, b) => {

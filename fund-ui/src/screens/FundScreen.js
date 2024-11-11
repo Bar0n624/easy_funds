@@ -15,6 +15,7 @@ export default function FundScreen() {
   const navigate = useNavigate();
   const { fundId, uid } = location.state;
   const name = location.state?.name;
+  const watchlist = location.state?.nowatchlist;
 
   useEffect(() => {
     if (!uid || !fundId) {
@@ -73,7 +74,7 @@ export default function FundScreen() {
           ) : (
             fundData && (
               <div>
-                <FundInfo info={fundData.info} uid={uid} />
+                <FundInfo info={fundData.info} uid={uid} watchlist={watchlist}/>
                 <FundGraph graphData={graphData} />
                 <FundList
                   title={

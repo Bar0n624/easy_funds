@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-const FundInfo = ({ info, uid }) => {
+const FundInfo = ({ info, uid, watchlist}) => {
   const [boughtOn, setBoughtOn] = useState("");
   const [boughtFor, setBoughtFor] = useState("");
   const [investedAmount, setInvestedAmount] = useState("");
@@ -126,12 +126,13 @@ const FundInfo = ({ info, uid }) => {
             {percChange}%
         </span>
         </div>
+        {!watchlist &&
         <button
             onClick={addToWatchlist}
             className="mt-8 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
         >
           Add to Watchlist
-        </button>
+        </button>}
         <div className="mt-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
             Add to Portfolio
