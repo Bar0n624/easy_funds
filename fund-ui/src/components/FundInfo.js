@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-const FundInfo = ({ info, uid, watchlist}) => {
+const FundInfo = ({ info, uid, watchlist }) => {
   const [boughtOn, setBoughtOn] = useState("");
   const [boughtFor, setBoughtFor] = useState("");
+  const [numberPurchased, setNumberPurchased] = useState("");
   const [investedAmount, setInvestedAmount] = useState("");
   const [soldOn, setSoldOn] = useState("");
   const [soldFor, setSoldFor] = useState("");
@@ -38,6 +39,42 @@ const FundInfo = ({ info, uid, watchlist}) => {
     }
   }, [selectedRange, info]);
 
+  const fetchPrice = async (date, setPrice) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/fund/date?f_id=${info.fund_id}&date=${date} 00:00:00`);
+      if (response.status === 200) {
+        setPrice(response.data.price);
+      }
+    } catch (error) {
+      console.error("Error fetching price:", error);
+      setPrice("");
+    }
+  };
+
+  const handleBoughtOnChange = async (date) => {
+    setBoughtOn(date);
+    await fetchPrice(date, setBoughtFor);
+  };
+
+  const handleSoldOnChange = async (date) => {
+    setSoldOn(date);
+    await fetchPrice(date, setSoldFor);
+  };
+
+  useEffect(() => {
+    if (boughtFor && numberPurchased) {
+      setInvestedAmount((boughtFor * numberPurchased).toFixed(2));
+    }
+  }, [boughtFor, numberPurchased]);
+
+  useEffect(() => {
+    if (soldFor && numberPurchased) {
+      setReturnAmount((soldFor * numberPurchased).toFixed(2));
+    } else {
+      setReturnAmount("");
+    }
+  }, [soldFor, numberPurchased]);
+
   const addToWatchlist = async () => {
     try {
       await axios.post("http://localhost:5000/watchlist/addone", {
@@ -51,8 +88,8 @@ const FundInfo = ({ info, uid, watchlist}) => {
   };
 
   const addToPortfolio = async () => {
-    if (!boughtOn || boughtOn === "0000-00-00" || !boughtFor || !investedAmount) {
-      setErrorMessage("Please fill in all required fields: Bought On (valid date), Bought For, and Invested Amount.");
+    if (!boughtOn || boughtOn === "0000-00-00" || !boughtFor || !numberPurchased) {
+      setErrorMessage("Please fill in all required fields: Bought On (valid date), Bought For, and Number Purchased.");
       return;
     }
 
@@ -75,11 +112,13 @@ const FundInfo = ({ info, uid, watchlist}) => {
     }
   };
 
+  const netProfitLoss = returnAmount - investedAmount;
+  const netProfitLossPercentage = ((netProfitLoss / investedAmount) * 100).toFixed(2);
+  const profitLossColor = netProfitLoss >= 0 ? "text-green-500" : "text-red-500";
+
   return (
       <div className="mb-8 bg-white p-12 rounded-lg shadow-md">
-        <h1 className="text-5xl font-bold text-gray-800 mb-8">
-          {info.fund_name}
-        </h1>
+        <h1 className="text-5xl font-bold text-gray-800 mb-8">{info.fund_name}</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <span>
           <p className="font-bold text-xl">Category</p>
@@ -95,9 +134,7 @@ const FundInfo = ({ info, uid, watchlist}) => {
         </span>
           <span>
           <p className="font-bold text-xl">Standard deviation</p>
-          <p className="font-semibold text-l">
-            {info.standard_deviation.toFixed(2)}
-          </p>
+          <p className="font-semibold text-l">{info.standard_deviation.toFixed(2)}</p>
         </span>
         </div>
         <div className="flex justify-between items-center mt-6">
@@ -107,9 +144,7 @@ const FundInfo = ({ info, uid, watchlist}) => {
                     key={range}
                     onClick={() => setSelectedRange(range)}
                     className={`text-sm font-semibold px-4 py-1 rounded ${
-                        selectedRange === range
-                            ? "bg-blue-500 text-white"
-                            : "bg-gray-200 text-gray-700"
+                        selectedRange === range ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700"
                     }`}
                 >
                   {range}
@@ -126,76 +161,93 @@ const FundInfo = ({ info, uid, watchlist}) => {
             {percChange}%
         </span>
         </div>
-        {!watchlist &&
-        <button
-            onClick={addToWatchlist}
-            className="mt-8 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
-        >
-          Add to Watchlist
-        </button>}
+        {!watchlist && (
+            <button
+                onClick={addToWatchlist}
+                className="mt-8 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
+            >
+              Add to Watchlist
+            </button>
+        )}
         <div className="mt-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Add to Portfolio
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Add to Portfolio</h2>
           {errorMessage && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 {errorMessage}
               </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-gray-700">Bought On</label>
-              <input
-                  type="date"
-                  value={boughtOn}
-                  onChange={(e) => setBoughtOn(e.target.value)}
-                  className="mt-1 block w-full p-2 border border-gray-300 rounded"
-              />
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-gray-700">Bought On</label>
+                <input
+                    type="date"
+                    value={boughtOn}
+                    onChange={(e) => handleBoughtOnChange(e.target.value)}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700">Bought For</label>
+                <input
+                    type="number"
+                    value={boughtFor}
+                    onChange={(e) => setBoughtFor(e.target.value)}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700">Number Purchased</label>
+                <input
+                    type="number"
+                    value={numberPurchased}
+                    onChange={(e) => setNumberPurchased(e.target.value)}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-gray-700">Bought For</label>
-              <input
-                  type="number"
-                  value={boughtFor}
-                  onChange={(e) => setBoughtFor(e.target.value)}
-                  className="mt-1 block w-full p-2 border border-gray-300 rounded"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700">Sold On</label>
+                <input
+                    type="date"
+                    value={soldOn}
+                    onChange={(e) => handleSoldOnChange(e.target.value)}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700">Sold For</label>
+                <input
+                    type="number"
+                    value={soldFor}
+                    onChange={(e) => setSoldFor(e.target.value)}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-gray-700">Invested Amount</label>
-              <input
-                  type="number"
-                  value={investedAmount}
-                  onChange={(e) => setInvestedAmount(e.target.value)}
-                  className="mt-1 block w-full p-2 border border-gray-300 rounded"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700">Invested Amount</label>
+                <input
+                    type="number"
+                    value={investedAmount}
+                    readOnly
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded bg-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700">Return Amount</label>
+                <input
+                    type="number"
+                    value={returnAmount}
+                    readOnly
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded bg-gray-100"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-gray-700">Sold On</label>
-              <input
-                  type="date"
-                  value={soldOn}
-                  onChange={(e) => setSoldOn(e.target.value)}
-                  className="mt-1 block w-full p-2 border border-gray-300 rounded"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700">Sold For</label>
-              <input
-                  type="number"
-                  value={soldFor}
-                  onChange={(e) => setSoldFor(e.target.value)}
-                  className="mt-1 block w-full p-2 border border-gray-300 rounded"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700">Return Amount</label>
-              <input
-                  type="number"
-                  value={returnAmount}
-                  onChange={(e) => setReturnAmount(e.target.value)}
-                  className="mt-1 block w-full p-2 border border-gray-300 rounded"
-              />
+            <div className={`mt-4 ${profitLossColor}`}>
+              <p>Net {netProfitLoss >= 0 ? "Profit" : "Loss"}: ₹{Math.abs(netProfitLoss).toFixed(2)} ({netProfitLossPercentage}%)</p>
             </div>
           </div>
           <button

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import SideBar from '../components/SideBar';
+import PortfolioDisplay from '../components/PortfolioDisplay';
 
 const PortfolioScreen = () => {
     const [data, setData] = useState([]);
@@ -33,10 +34,6 @@ const PortfolioScreen = () => {
         fetchData();
     }, [uid, navigate]);
 
-    const handleFundClick = (fundId) => {
-        navigate('/fund', { state: { fundId, uid, name } });
-    };
-
     return (
         <div className="min-h-screen bg-gray-100">
             <SideBar uid={uid} username={name} />
@@ -52,24 +49,7 @@ const PortfolioScreen = () => {
                             {error}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {data.map((fund) => (
-                                <div
-                                    key={fund[0]}
-                                    className="bg-white rounded-lg p-6 cursor-pointer shadow hover:shadow-md hover:bg-gray-300 transition-all duration-200 hover:translate-y-[-2px]"
-                                    onClick={() => handleFundClick(fund[0])}
-                                >
-                                    <h2 className="text-xl font-semibold text-gray-800">{fund[1]}</h2>
-                                    <p className="text-gray-600">Bought On: {fund[2]}</p>
-                                    <p className="text-gray-600">Bought For: {fund[3]}</p>
-                                    <p className="text-gray-600">Invested Amount: {fund[4]}</p>
-                                    <p className="text-gray-600">Sold On: {fund[5]}</p>
-                                    <p className="text-gray-600">Sold For: {fund[6]}</p>
-                                    <p className="text-gray-600">Return Amount: {fund[7]}</p>
-                                    <p className="text-gray-600">Value: {fund[8]}</p>
-                                </div>
-                            ))}
-                        </div>
+                        <PortfolioDisplay data={data} uid={uid} name={name} />
                     )}
                 </div>
             </main>

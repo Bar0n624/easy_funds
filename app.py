@@ -62,8 +62,12 @@ def add_user():
     * A new token will be generated and sent back to the
       on every login.
 """
+
+
 def genAuthToken(user_id):
-    auth = hashlib.sha256((str(time()) + str(user_id) + "bar0n&vb").encode()).hexdigest()
+    auth = hashlib.sha256(
+        (str(time()) + str(user_id) + "bar0n&vb").encode()
+    ).hexdigest()
     conn = mysql_connect()
     cur = conn.cursor()
 
@@ -72,8 +76,10 @@ def genAuthToken(user_id):
         cur.execute("DELETE FROM auth WHERE user_id = %s;", (user_id,))
 
         # Save new auth token
-        cur.execute("INSERT INTO auth (user_id, token_hash, created_on) VALUES (%s, %s, CURDATE());",
-                    (user_id, auth))
+        cur.execute(
+            "INSERT INTO auth (user_id, token_hash, created_on) VALUES (%s, %s, CURDATE());",
+            (user_id, auth),
+        )
 
         conn.commit()
     except Error as e:
@@ -83,6 +89,7 @@ def genAuthToken(user_id):
         cur.close()
         conn.close()
         return auth
+
 
 # User login
 @app.route("/login", methods=["POST"])
@@ -99,9 +106,9 @@ def verify_user():
     try:
         cur.execute(
             "SELECT password_hash, salt, user_id FROM user WHERE user_name = %s",
-            (user_name,)
+            (user_name,),
         )
-        rec = cur.fetchone()    
+        rec = cur.fetchone()
     except Error as e:
         print(e)
         return jsonify({"error": "Database query error"}), ERR_INTERNAL_ALL
@@ -119,9 +126,10 @@ def verify_user():
             if not auth:
                 return jsonify({"error": "Invalid credentials"}), ERR_UNAUTHORIZED
             else:
-                return jsonify({"message": "Login successful", "user_id": uid, "auth_token": auth}), ERR_SUCCESS
+                return jsonify(
+                    {"message": "Login successful", "user_id": uid, "auth_token": auth}
+                ), ERR_SUCCESS
     return jsonify({"error": "Invalid credentials"}), ERR_UNAUTHORIZED
-
 
 
 # Home page
@@ -638,29 +646,33 @@ def add_many_watchlist():
 
 """Delete an item from watchlist
 """
+
+
 @app.route("/watchlist/deleteone", methods=["POST"])
 def delete_one_watchlist():
     data = request.get_json()
     if "user_id" not in data or "fund_id" not in data:
-        return jsonify({"error" : "User ID and Fund ID required"}), ERR_INVALID
+        return jsonify({"error": "User ID and Fund ID required"}), ERR_INVALID
 
     user_id, fund_id = data["user_id"], data["fund_id"]
 
     conn = mysql_connect()
     cur = conn.cursor()
     try:
-        cur.execute("DELETE FROM watchlist WHERE user_id = %s AND fund_id = %s;",
-                    (user_id, fund_id))
+        cur.execute(
+            "DELETE FROM watchlist WHERE user_id = %s AND fund_id = %s;",
+            (user_id, fund_id),
+        )
         conn.commit()
     except Error as e:
         print(e)
         cur.close()
         conn.close()
-        return jsonify({"error" : "Failed to process query"}), ERR_INTERNAL_ALL
+        return jsonify({"error": "Failed to process query"}), ERR_INTERNAL_ALL
     finally:
         cur.close()
         conn.close()
-        return jsonify({"message" : "Record dropped successfully"}), ERR_SUCCESS
+        return jsonify({"message": "Record dropped successfully"}), ERR_SUCCESS
 
 
 """Add to portfolio
@@ -771,8 +783,8 @@ def list_portfolio():
     res = {}
     try:
         cur.execute(
-            """SELECT fund_id as fid, fund_name as fname, bought_on, bought_for, invested_amount, sold_on, sold_for, return_amount, value
-                FROM portfolio, fund where portfolio.fund_id = fund.fund_id AND portfolio.user_id = %s
+            """SELECT portfolio.fund_id as fid, fund_name.fund_name as fname, bought_on, bought_for, invested_amount, sold_on, sold_for, return_amount, fund.value
+                FROM portfolio, fund, fund_name where portfolio.fund_id = fund.fund_id AND portfolio.user_id = %s AND portfolio.fund_id = fund_name.fund_id
                 ORDER BY invested_amount DESC
             """,
             (user_id,),
@@ -833,6 +845,71 @@ def top_fund():
         cur.close()
         conn.close()
         return jsonify(res), ERR_SUCCESS
+
+
+"""returns the price of a fund on a given date. Returns the price on the nearest date to the given date if the given date is not present in the database
+"""
+
+
+@app.route("/fund/date", methods=["GET"])
+def fund_date():
+    fund_id = request.args.get("f_id")
+    date = request.args.get("date")
+    if not fund_id or not date:
+        return jsonify({"error": "Fund ID and Date required"}), ERR_INVALID
+    res = {}
+    conn = mysql_connect()
+    cur = conn.cursor(dictionary=True)
+    try:
+        cur.execute(
+            "SELECT price FROM fund_value WHERE fund_id = %s AND date <= %s ORDER BY date DESC LIMIT 1;",
+            (fund_id, date),
+        )
+        rec = cur.fetchone()
+        if not rec:
+            return jsonify({}), ERR_SUCCESS
+        res["price"] = rec["price"]
+    except Error as e:
+        print(e)
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Could not process query"}), ERR_INTERNAL_ALL
+    finally:
+        cur.close()
+        conn.close()
+        return jsonify(res), ERR_SUCCESS
+
+
+"""delete an item from watchlist
+"""
+
+
+@app.route("/portfolio/delete", methods=["POST"])
+def delete_one_portfolio():
+    data = request.get_json()
+    print(data)
+    if "user_id" not in data or "fund_id" not in data or "bought_on" not in data:
+        return jsonify(
+            {"error": "User ID, Fund ID and bought on date required"}
+        ), ERR_INVALID
+    user_id, fund_id, bought_on = data["user_id"], data["fund_id"], data["bought_on"]
+    conn = mysql_connect()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "DELETE FROM portfolio WHERE user_id = %s AND fund_id = %s AND bought_on = %s;",
+            (user_id, fund_id, bought_on),
+        )
+        conn.commit()
+    except Error as e:
+        print(e)
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Failed to process query"}), ERR_INTERNAL_ALL
+    finally:
+        cur.close()
+        conn.close()
+        return jsonify({"message": "Record dropped successfully"}), ERR_SUCCESS
 
 
 if __name__ == "__main__":
