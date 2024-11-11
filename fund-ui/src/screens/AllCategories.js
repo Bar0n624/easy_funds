@@ -63,7 +63,7 @@ export default function AllCategories() {
                             {error}
                         </div>
                     ) : (
-                        data && <CategoryDisplay data={{ results: filteredCategories }} uid={user_id}/>
+                        data && <CategoryDisplay data={{ results: filteredCategories }} uid={user_id} name={name}/>
                     )}
                 </div>
             </main>

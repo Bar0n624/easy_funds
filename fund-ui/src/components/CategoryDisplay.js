@@ -1,11 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const CategoryDisplay = ({ data, uid }) => {
+const CategoryDisplay = ({ data, uid, name }) => {
     const navigate = useNavigate();
 
     const handleCategoryClick = (categoryId) => {
-        navigate('/category', { state: { categoryId, uid } });
+        navigate('/category', { state: { categoryId, uid, name} });
     };
 
     return (

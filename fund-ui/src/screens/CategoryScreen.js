@@ -63,7 +63,7 @@ const CategoryScreen = () => {
                             {error}
                         </div>
                     ) : (
-                        data && <SmallFundList data={{results: filteredFunds}} uid={uid}/>
+                        data && <SmallFundList data={{results: filteredFunds}} uid={uid} name={name}/>
                     )}
                 </div>
             </main>

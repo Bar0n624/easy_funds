@@ -94,7 +94,7 @@ export default function Home() {
                                 {error}
                             </div>
                         ) : (
-                            data && <HomeDisplay data={data} uid={uid} />
+                            data && <HomeDisplay data={data} uid={uid} name={name}/>
                         )
                     )}
                 </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const HomeDisplay = ({ data, uid }) => {
+const HomeDisplay = ({ data, uid, name}) => {
     const navigate = useNavigate();
     const periods = {
         one_month: "Top Performers of the Last Month",
@@ -11,7 +11,7 @@ const HomeDisplay = ({ data, uid }) => {
     };
 
     const handleFundClick = (fundId) => {
-        navigate('/fund', { state: { fundId, uid } });
+        navigate('/fund', { state: { fundId, uid, name } });
     };
 
     return (

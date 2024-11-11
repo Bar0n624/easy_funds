@@ -13,7 +13,7 @@ const WatchlistScreen = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const uid = location.state?.uid;
-  const uname = location.state?.name;
+  const name = location.state?.name;
 
   useEffect(() => {
     if (!uid) {
@@ -56,7 +56,7 @@ const WatchlistScreen = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Sidebar uid={uid} username={uname} />
+      <Sidebar uid={uid} username={name} />
       <main className="ml-64 p-8">
         <div className="flex flex-col items-center">
           <h1 className="text-4xl font-bold text-gray-800 mb-4 p-3 text-center">
@@ -76,7 +76,7 @@ const WatchlistScreen = () => {
             </div>
           ) : (
             data && (
-              <WatchlistItem data={{ results: filteredFunds }} uid={uid} onDelete={handleDelete} />
+              <WatchlistItem data={{ results: filteredFunds }} uid={uid} onDelete={handleDelete} name={name} />
             )
           )}
         </div>

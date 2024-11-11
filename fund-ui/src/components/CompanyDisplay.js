@@ -1,11 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const CompanyDisplay = ({ data, uid }) => {
+const CompanyDisplay = ({ data, uid, name}) => {
     const navigate = useNavigate();
 
     const handleCompanyClick = (companyId) => {
-        navigate('/company', { state: { companyId, uid } });
+        navigate('/company', { state: { companyId, uid, name} });
     };
 
     return (

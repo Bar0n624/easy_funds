@@ -1,11 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const FundDisplay = ({ data, uid }) => {
+const FundDisplay = ({ data, uid , name}) => {
     const navigate = useNavigate();
 
     const handleFundClick = (fundId) => {
-        navigate('/fund', { state: { fundId, uid } });
+        navigate('/fund', { state: { fundId, uid , name} });
     };
 
     return (

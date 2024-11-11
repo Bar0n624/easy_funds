@@ -9,11 +9,11 @@ import {
 const RED = "rgb(240, 125, 100)";
 const GREEN = "rgb(0, 178, 135)";
 
-const WatchlistItem = ({ data, uid, onDelete }) => {
+const WatchlistItem = ({ data, uid, onDelete, name}) => {
   const navigate = useNavigate();
 
   const handleFundClick = (fundId) => {
-    navigate("/fund", { state: { fundId, uid } });
+    navigate("/fund", { state: { fundId, uid, name} });
   };
 
   const handleDelete = async (fundId) => {

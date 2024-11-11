@@ -63,7 +63,7 @@ export default function AllCompanies() {
                             {error}
                         </div>
                     ) : (
-                        data && <CompanyDisplay data={{ results: filteredCompanies }} uid={user_id}/>
+                        data && <CompanyDisplay data={{ results: filteredCompanies }} uid={user_id} name={name}/>
                     )}
                 </div>
             </main>

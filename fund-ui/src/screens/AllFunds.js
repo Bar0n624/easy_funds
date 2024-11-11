@@ -63,7 +63,7 @@ export default function AllFunds() {
                             {error}
                         </div>
                     ) : (
-                        data && <FundDisplay data={{ results: filteredFunds }} uid={user_id}/>
+                        data && <FundDisplay data={{ results: filteredFunds }} uid={user_id} name={name}/>
                     )}
                 </div>
             </main>
