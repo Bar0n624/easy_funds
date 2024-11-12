@@ -1,3 +1,10 @@
+# ER Diagram
+![er-diagram](./erd.png)
+
+# Relational Schema
+![relational-schema](./rel.png)
+
+
 # SQL Schema and Functions
 
 ## User Table
