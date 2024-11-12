@@ -16,22 +16,40 @@ const FundInfo = ({ info, uid, watchlist }) => {
   useEffect(() => {
     switch (selectedRange) {
       case "1W":
-        setPercChange(info.one_week.toFixed(2));
+        if(info.one_week == null)
+            setPercChange(0.0);
+        else
+          setPercChange(info.one_week.toFixed(2));
         break;
       case "1M":
-        setPercChange(info.one_month.toFixed(2));
+        if(info.one_month == null)
+          setPercChange(0.0);
+        else
+          setPercChange(info.one_month.toFixed(2));
         break;
       case "3M":
-        setPercChange(info.three_month.toFixed(2));
+        if(info.three_month == null)
+          setPercChange(0.0);
+        else
+          setPercChange(info.three_month.toFixed(2));
         break;
       case "6M":
-        setPercChange(info.six_month.toFixed(2));
+        if(info.six_month == null)
+          setPercChange(0.0);
+        else
+          setPercChange(info.six_month.toFixed(2));
         break;
       case "1Y":
-        setPercChange(info.one_year.toFixed(2));
+        if(info.one_year == null)
+          setPercChange(0.0);
+        else
+          setPercChange(info.one_year.toFixed(2));
         break;
       case "All":
-        setPercChange(info.lifetime.toFixed(2));
+        if(info.lifetime == null)
+          setPercChange(0.0);
+        else
+          setPercChange(info.lifetime.toFixed(2));
         break;
       default:
         setPercChange(0.0);
